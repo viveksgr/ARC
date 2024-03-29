@@ -20,12 +20,12 @@ coarser_ = false; % Only binary estimation of valence RSM
 single_n = false; % Noisepool
 single_c = true; % Cutoff from sign voxels
 increm = false; % Compare rating to previous
-partial_corr = true;
+partial_corr = false;
  
 nodor = 160;
 intens_reg = false;
-val_sep = true;
-spearmanner = true;
+val_sep = false;
+spearmanner = false;
 sess_l = repmat([0],1,2,3);
 dirs = {fullfile(root,'\ARC01\mediation');
     fullfile(root,'\ARC01\mediation');
@@ -286,9 +286,9 @@ for s = [1 2 3] % Subject
 end
 mkdir(savepath)
 
-rsa_P1_back = rsa_P1;
-% rsa_P2 = permute(rsa_P2,[3 2 1]);
-rsa_P1 = rsa_P2-3;
+% rsa_P1_back = rsa_P1;
+rsa_P2 = permute(rsa_P2,[3 2 1]);
+% rsa_P1 = rsa_P2-3;
 
 S_mat = squeeze(mean(rsa_P1));
 % S_mat2 = arrayfun(@r2p,S_mat,sum(utl_mask2(:))*ones(size(S_mat)));
