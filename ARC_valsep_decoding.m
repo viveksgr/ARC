@@ -2,8 +2,8 @@
 root = 'C:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
-fmasker = false;
-binz = 3;
+fmasker = true;
+binz = 7;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
 
 anat_names = {'PC','AMY','OFC','VMPFC'};
@@ -14,9 +14,11 @@ nanat = length(anat_names);
 medianize_behav = true;
 salier = true;
 zscorer = true;
-rangenormer = true;
+rangenormer = false;
 sz_cntrl = false;
 raw_RSA = false;     
+smoter = true;
+pca_maker = false;
 
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
@@ -139,9 +141,9 @@ for s = [1 2 3] % Subject
         end
         
         if single_n
-            modelmd2 = modelmd(~noisepool,:);
+            modelmd2 = double(modelmd(~noisepool,:));
         else
-            modelmd2 = modelmd;
+            modelmd2 = double(modelmd);
         end
 
         fprintf('size:%02d\n',size(modelmd,1))
@@ -159,11 +161,47 @@ for s = [1 2 3] % Subject
             labels_sal = discretize(abs(behav_ratings_),binz);
         end
 
-        rsa_P1(s,ii,1) = Classify_Permute_VS2( double(modelmd2'), labels_val, 10);
-        rsa_P1(s,ii,2) = Classify_Permute_VS2( double(modelmd2'), labels_sal, 10);
+        if pca_maker
+            [coeff,score,~,~,var] = pca(modelmd2');
+            var = cumsum(var);
+            modelmd2 = score(:,1:100)';
+        end
+
+    
+
+        if smoter
+            [neural_val,labels_val] = smote(modelmd2', [], 100, 'Class', labels_val);
+            [neural_sal,labels_sal] = smote(modelmd2', [], 100, 'Class', labels_sal);
+        else
+            neural_val = modelmd2';
+            neural_sal = modelmd2';
+        end
+        
+        % % labels_val_perm = labels_val(randperm(length(labels_val)));
+        rsa_P1(s,ii,1) = Classify_Permute_VS2(neural_val, labels_val, 4);
+        rsa_P1(s,ii,2) = Classify_Permute_VS2(neural_sal, labels_sal, 4);
+
+        % % Sanity checks
+        % modelmd_binned = ARC_binAndTransform(modelmd2, behav_ratings_, binz, [ms1 ms2]);
+        % modelmd_corrcoef = corrcoef(modelmd_binned);
+        % val_sc = linspace(-1,1,binz);
+        % sal_sc = abs(val_sc);
+        % val_mat = 1-abs(val_sc-val_sc');
+        % sal_mat = 1-abs(sal_sc-sal_sc');
+        % utl_mask2 = logical(triu(ones(length(val_mat)),1)); % All possible odors
+        % % 
+        % % fastcorr(sal_mat(utl_mask2),modelmd_corrcoef(utl_mask2))
+        % % fastcorr(val_mat(utl_mask2),modelmd_corrcoef(utl_mask2))
+        % % fastcorr(val_mat(utl_mask2),sal_mat(utl_mask2))
+        % 
+        % [w,t] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
+
+
 
     end
 end
+
+ 
 mkdir(savepath)
 S_mat = squeeze(mean(rsa_P1));
 S_err = squeeze(std(rsa_P1))./sqrt(3);

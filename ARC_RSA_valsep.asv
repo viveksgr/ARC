@@ -2,8 +2,8 @@
 root = 'C:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
-fmasker = true;
-binz =7;
+fmasker = false;
+binz =9;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
 
 anat_names = {'PC','AMY','OFC','VMPFC'};
@@ -168,7 +168,7 @@ for s = [1 2 3] % Subject
             centers_rn = 2*((centers_-ms1)./(ms2-ms1))-1;
             centers_rd = round(centers_rn,2);
         end
-        % modelmd_binned = zscore(modelmd_binned,[],1);
+        % modelmd_binned = zscore(modelmd_binned,[],2);
         modelmd_corrcoef = corrcoef(modelmd_binned);
         
           
@@ -242,8 +242,7 @@ for s = [1 2 3] % Subject
             utl_mask_blk = flipud(utl_mask1);
 
 
-            % [~, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
-               [~, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
+            [~, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
             
              % [~, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask)],modelmd_corrcoef(utl_mask));
           
@@ -338,9 +337,9 @@ legend({'Val+','Val-'})
 clear modelmd_ modelmd modelmd2 S1_omat_vals S2_omat_vals unity M_anat M_sal M_val 
 savefig(fullfile(savepath,'ARC_RSA'))
 save(fullfile(savepath,'ARC_RSA'))
-print(fullfile(savepath,'ARC_RSA'),'-dpng')
 
 
+%%%
 figure()
 hold on
 bar(1:nanat,mean(rsa_Pcorr))
@@ -353,16 +352,16 @@ xticks(1:nanat)
 xticklabels(anat_names);
 ylabel('t score of correlation')
 savefig(fullfile(savepath,'voxwise_similarity'))
-print(fullfile(savepath,'voxwise_similarity'),'-dpng')
+
 
 figure()
 ARC_barplot(rsa_prop)
 xticks(1:nanat)
 xticklabels(anat_names);
 ylabel('Fraction voxels')
-legend({'only Val+', 'only Val-', 'both'})
+legend({'only Val+, only Val-, both'})
 savefig(fullfile(savepath,'voxprop'))
-print(fullfile(savepath,'voxprop'),'-dpng')
+prunt
 
 %% Visualize anat RDS
 imger = false;
