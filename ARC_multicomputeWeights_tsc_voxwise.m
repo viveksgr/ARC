@@ -18,10 +18,10 @@ for ii = 1:nvox
     t_scores(ii,:) = tmp(2:end);
 end
 
-r_corr = corr(t_scores(:,1),t_scores(:,2),'type','Spearman');
-[~,t_corr] = ARC_r2t(r_corr,length(t_scores(:,1)));
+t_corr = corr(t_scores(:,1),t_scores(:,2),'type','Spearman');
+% [~,t_corr] = ARC_r2t(t_corr,length(t_scores(:,1)));
 
-proportions =  computeProportions(t_scores, tinv(0.975,990));
+proportions =  computeProportions(t_scores, tinv(0.975,size(t_scores,1)));
 end
 
 function proportions = computeProportions(t_scores, thr)

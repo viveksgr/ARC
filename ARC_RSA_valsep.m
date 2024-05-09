@@ -3,7 +3,7 @@ root = 'C:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
 fmasker = true;
-binz =7;
+binz =7 ;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
 
 anat_names = {'PC','AMY','OFC','VMPFC'};
@@ -26,6 +26,7 @@ single_z = true; % Zscore
 coarser_ = false; % Only binary estimation of valence RSM
 single_n = false; % Noisepool
 single_c = true; % Cutoff from sign voxels
+zscorer = false;
 increm = false; % Compare rating to previous
 partial_corr = false;
 
@@ -46,11 +47,12 @@ fprintf('\n')
 
 rsa_P1 = zeros(3,nanat,2); 
 rsa_Pcorr = zeros(3,nanat);
-rsa_prop = zeros(3,nanat,3); 
+rsa_prop = zeros(3,nanat,3);
 
 rs = zeros(3,1);
 hold on
 % Subject - index
+ t_score_mat = cell(3,4);
 kk = 1;
 for s = [1 2 3] % Subject
     fprintf('Subject: %02d\n',s)
@@ -149,9 +151,9 @@ for s = [1 2 3] % Subject
         [r1,~] = find(isnan(modelmd2));
         modelmd2(r1,:) = [];
         
-        % if zscorer
-        %     modelmd2 = zscore(modelmd2,[],2);
-        % end
+        if zscorer
+            modelmd2 = zscore(modelmd2,[],2);
+        end
         % [M1_new, M2_new] = ARC_transformMatrix(behav_ratings_,  modelmd2, binz,[ms1 ms2]);
 
 
@@ -159,6 +161,7 @@ for s = [1 2 3] % Subject
             if ~sz_cntrl
                 modelmd_binned = ARC_binAndTransform(modelmd2, behav_ratings_, binz, [ms1 ms2]);
             else
+                % Main stuff
                 modelmd_binned = ARC_binAndTransform_sz(modelmd2, behav_ratings_, binz, [ms1 ms2],5);
             end
         else
@@ -242,60 +245,61 @@ for s = [1 2 3] % Subject
             utl_mask_blk = flipud(utl_mask1);
 
 
-            % [~, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
-               [~, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
-            
-             % [~, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask)],modelmd_corrcoef(utl_mask));
-          
-              rsa_P1(s,ii,:)  = t_scores(2:end);
-            
+            [~, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
+
+            % [~, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],modelmd_corrcoef(utl_mask_blk));
+
+            rsa_P1(s,ii,:)  = t_scores(2:end);
+         
+
             % utl_mask = logical(triu(ones(length(val_mat)),1)); % All possible odors
             % rsa_P1(s,ii,1) = fastcorr(modelmd_corrcoef,val_mat);
-   
-             [rsa_Pcorr(s,ii),tmp_tsc, rsa_prop(s,ii,:)] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);   
-        % Make figure
+
+            [rsa_Pcorr(s,ii),t_scores, rsa_prop(s,ii,:)] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
+
+            t_score_mat{s,ii} = t_scores;
+            % Calculate conditions
+            thr = tinv(0.975,size(t_scores,1));
+            col1Above = t_scores(:,1) > thr & t_scores(:,2) <= thr; % Col 1 above thr, Col 2 not
+            col2Above = t_scores(:,2) > thr & t_scores(:,1) <= thr; % Col 2 above thr, Col 1 not
+            bothAbove = t_scores(:,1) > thr & t_scores(:,2) > thr;  % Both cols above thr
+
+            % Pos_population:
+            rsa_pos_pop = nanmean(modelmd2( col1Above,:));
+            rsa_neg_pop= nanmean(modelmd2( col2Above,:));
+
+            % rsa_Pcorr(s,ii) = corr(rsa_pos_pop', rsa_neg_pop');
+
+             
+             % Make figure
         subplot(3,4,kk)
         hold on
-        % % 
-        % model_binned_z = modelmd_binned;
-        % model_binned_z(isnan(model_binned_z)) = 0;
-        % x = run_umap(model_binned_z','verbose'  ,'none');
-        % colormap = parula(20);
-        % % % Create the scatter plot
-        % hold on;
-        % for i = 1:length(x)
-        %     scatter(x(i,1), x(i,2), 36, colormap(i, :), 'filled');
-        % end
-        %  rsa_umap{s,ii}=x;
-        %  
+     
+        % ARC_scatterDensity(t_scores(:,1),t_scores(:,2))
+        % xlabel('Val+ tscore')
+        % ylabel('Val- tscore')
+        % title(sprintf('S%02d: %s, r: %.2f',s,anat_names{ii},rsa_Pcorr(s,ii)))
 
-        % imagesc(linspace(-1,1,2*binz),linspace(-1,1,2*binz),ARC_matprod(modelmd_corrcoef,val_mat))
-          % imagesc(ARC_matprod(modelmd_corrcoef,val_mat))
-        imagesc(val_sc,val_sc,modelmd_corrcoef)
-        % imagesc(M_mat)
-
+        % % imagesc((val_sc),(val_sc),flipud(modelmd_corrcoef-mean(modelmd_corrcoef,'all')))
+          imagesc((val_sc),(val_sc),(modelmd_corrcoef))
+        yticks([-1,0,1])
+        yticklabels({1,0,-1})
+        % % imagesc(M_mat)
         % 
+        % % 
         if ~rangenormer
-               % xticks(1:2*binz)
-            % yticks(1:2*binz)
-            % yticklabels(-1:0.5:0)
-            % xticklabels(0:0.5:1)
-        else
-            xticks(1:1:2*binz+1)
-            yticks(1:1:2*binz+1)
-            yticklabels(centers_rd(1:1:end))
-            xticklabels(centers_rd(1:1:end))
-            % % yticklabels(centers_rd(1:binz))
-            % xticklabels(centers_rd(binz+1:end))
+               xticks(1:2*binz)
+            yticks(1:2*binz)
+            yticklabels(-1:0.5:0)
+            xticklabels(0:0.5:1)
+    
 
         end
-
+        % 
         kk = kk+1;
         colorbar
         axis tight
-        % clim([0.95  1])
-        % xlabel('UMAP-1')
-        % ylabel('UMAP-2')
+        % % clim([0.95  1])
         xlabel('Pleasantness')
         ylabel('Pleasantness')
         title(anat_names{ii})
@@ -335,6 +339,7 @@ end
 ylabel('t score')
 legend({'Val+','Val-'})
 % legend({'Valence','Salience'})
+
 clear modelmd_ modelmd modelmd2 S1_omat_vals S2_omat_vals unity M_anat M_sal M_val 
 savefig(fullfile(savepath,'ARC_RSA'))
 save(fullfile(savepath,'ARC_RSA'))
@@ -363,6 +368,17 @@ ylabel('Fraction voxels')
 legend({'only Val+', 'only Val-', 'both'})
 savefig(fullfile(savepath,'voxprop'))
 print(fullfile(savepath,'voxprop'),'-dpng')
+
+
+% figure()
+% hold on
+% for ii = 1:nanat
+%     subplot(2,nanat,ii)
+%     plot(squeeze(rsa_pos_pop(:,ii,:))')
+%     subplot(2,nanat,ii+nanat)
+%       plot(squeeze(rsa_neg_pop(:,ii,:))')
+% end
+
 
 %% Visualize anat RDS
 imger = false;
@@ -421,3 +437,52 @@ idx_idx = [idx_exp_km, idx_exp_nkm];
 M_val_img = M_val_img(idx_idx, idx_idx);
 imagesc(M_val_img)
 end
+
+%% RDMs
+  val_sc = linspace(-1,1,7);
+  figure()
+  hold on
+subplot(2,4,1)
+plot(val_sc,val_sc)
+ylabel('Valence')
+
+subplot(2,4,2)
+plot(val_sc,sal_sc)
+ylabel('Salience')
+
+subplot(2,4,3)
+plot(val_sc,valp)
+ylabel('Val+')
+
+subplot(2,4,4)
+plot(val_sc,valn)
+ylabel('Val-')
+
+subplot(2,4,5)
+val_mat = 1-abs(val_sc-val_sc');
+valp_mat = 1-abs(valp-valp');
+valn_mat = 1-abs(valn-valn');
+sal_mat = 1-abs(sal_sc-sal_sc');
+imagesc(val_sc,val_sc,flipud(val_mat))
+yticks([-1 -0.5 0 0.5 1])
+yticklabels(-[-1 -0.5 0 0.5 1])
+xlabel('Pleasantness')
+ylabel('Pleasantness')
+
+subplot(2,4,6)
+imagesc(val_sc,val_sc,flipud(sal_mat))
+yticks([-1 -0.5 0 0.5 1])
+yticklabels(-[-1 -0.5 0 0.5 1])
+xlabel('Pleasantness')
+
+subplot(2,4,7)
+imagesc(val_sc,val_sc,flipud(valp_mat))
+yticks([-1 -0.5 0 0.5 1])
+yticklabels(-[-1 -0.5 0 0.5 1])
+xlabel('Pleasantness')
+
+subplot(2,4,8)
+imagesc(val_sc,val_sc,flipud(valn_mat))
+yticks([-1 -0.5 0 0.5 1])
+yticklabels(-[-1 -0.5 0 0.5 1])
+xlabel('Pleasantness')
