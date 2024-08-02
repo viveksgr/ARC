@@ -15,9 +15,14 @@ nanRows = any(isnan([X, y]), 2);
 X(nanRows, :) = [];
 y(nanRows) = [];
 
-% Add an intercept column to X
+% % Standardize the input variables (X)
+X = zscore(X);
 X = [ones(size(X, 1), 1), X];
 
+% % Standardize the output variable (y)
+y = zscore(y);
+
+% % Unnormalized:
 % Solve for the weights
 weights = X \ y;
 

@@ -1,7 +1,8 @@
-function [t_corr, t_scores, proportions] = ARC_multicomputeWeights_tsc_voxwise(m1, m2, anatmat)
+function [t_corr, t_scores, proportions,w_scores] = ARC_multicomputeWeights_tsc_voxwise(m1, m2, anatmat)
 
 nvox = size(anatmat,1);
 t_scores = zeros(nvox,2);
+w_scores = zeros(nvox,2);
 
 binz = size(anatmat,2);
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
@@ -14,11 +15,12 @@ for ii = 1:nvox
     utl_mask_blk = flipud(utl_mask1);
 
 
-    [~,tmp] = ARC_multicomputeWeights_tsc( [m1(utl_mask_blk) m2(utl_mask_blk)],anatcorr(utl_mask_blk));
+    [wt,tmp] = ARC_multicomputeWeights_tsc( [m1(utl_mask_blk) m2(utl_mask_blk)],anatcorr(utl_mask_blk));
     t_scores(ii,:) = tmp(2:end);
+    w_scores(ii,:) = wt(2:end);
 end
-
-t_corr = corr(t_scores(:,1),t_scores(:,2),'type','Spearman');
+t_corr = corr(w_scores(:,1),w_scores(:,2),'type','Pearson');
+% t_corr = corr(t_scores(:,1),t_scores(:,2),'type','Spearman');
 % [~,t_corr] = ARC_r2t(t_corr,length(t_scores(:,1)));
 
 proportions =  computeProportions(t_scores, tinv(0.975,size(t_scores,1)));
