@@ -15,10 +15,12 @@ nanat = length(anat_names);
 medianize_behav = true;
 
 rangenormer = false;
-sz_cntrl = false;
+num_cntrl = false;
+sz_ctrl = false;
 raw_RSA = false;
 valsep =true;
-
+intens_reg = true;
+    
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
 % load('C:\Data\NEMO\swampsunset.mat');
@@ -33,7 +35,7 @@ increm = false; % Compare rating to previous
 partial_corr = false;
 
 nodor = 160;
-intens_reg = false;
+
 
 sess_l = repmat([0],1,2,3);
 dirs = {fullfile(root,'\ARC01\mediation');
@@ -41,7 +43,7 @@ dirs = {fullfile(root,'\ARC01\mediation');
     fullfile(root,'\ARC03\mediation')};
 behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
 % modelname = fullfile('mainval',sprintf('bin%01d',binz));
-modelname = 'norm_stuff\temp';
+modelname = 'controls\int_domainp';
 savepath = fullfile(root,'RSA',modelname);
 v_id = 2; % Index of vector for median splitting odors
 
@@ -75,6 +77,7 @@ for s = [1 2 3] % Subject
         behav_ratings = normalize(behav_ratings,'medianiqr');
         ms1 = min(behav_ratings);
         ms2 = max(behav_ratings);
+         behav_int = normalize( behav_int,'medianiqr');
     else
         ms1 = -1;
         ms2 = 1;
@@ -96,7 +99,7 @@ for s = [1 2 3] % Subject
     fmask_1d = fmask(mask);
     marea = and(fmask,mask);
 
-
+    
     if s <3
         anatpath = fullfile(root,sprintf('NEMO_%02d',s),'\imaging\nii\masks');
     else
@@ -150,7 +153,7 @@ for s = [1 2 3] % Subject
     utl_mask = logical(triu(ones(length(unity)),1)); % All possible odors
 
     behav_ratings_ = behav_ratings(group_vec);
-
+    
     for ii = 1:length(anat_names)
         fprintf('area:%02d\n',ii)
         modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
@@ -179,11 +182,11 @@ for s = [1 2 3] % Subject
 
 
         if ~rangenormer
-            if ~sz_cntrl
+            if ~num_cntrl
                 modelmd_binned = ARC_binAndTransform(modelmd2, behav_ratings_, binz, [ms1 ms2]);
+
             else
-                % Main stuff
-                modelmd_binned = ARC_binAndTransform_sz(modelmd2, behav_ratings_, binz, [ms1 ms2],5);
+                modelmd_binned = ARC_binAndTransform_sz(modelmd2, behav_ratings_, binz, [ms1 ms2]);
             end
         else
             modelmd_binned = ARC_binAndTransformQuantiles(modelmd2, behav_ratings_, binz);
@@ -192,13 +195,23 @@ for s = [1 2 3] % Subject
             centers_rn = 2*((centers_-ms1)./(ms2-ms1))-1;
             centers_rd = round(centers_rn,2);
         end
-        modelmd_binned = zscore(modelmd_binned,[],2);
+        % modelmd_binned = zscore(modelmd_binned,[],2);
         modelmd_corrcoef = corrcoef(modelmd_binned);
 
+        if sz_ctrl
+            [modelmd_corrcoef] = ARC_binAndTransform_sz(modelmd2, behav_ratings_, binz, [ms1 ms2],100);
+        end
+
+        if intens_reg
+            modelmd_binned_int = ARC_binAndTransform(modelmd2, behav_int(group_vec), binz, [min(behav_int) max(behav_int)]);
+            % modelmd_binned_int  = zscore(modelmd_binned_int ,[],2);
+            modelmd_corrcoef_int  = corrcoef(modelmd_binned_int);
+        end
 
         % if and(s==2,ii==2)
-        %     'dil ki surkh deewaron pe'
+        %     'dil ki surkh deewaron pe...'
         % end
+
         val_sc = linspace(-1,1,binz);
         if rangenormer;  val_sc = centers_rn; end
 
@@ -235,12 +248,19 @@ for s = [1 2 3] % Subject
         utl_mask_blk = flipud(utl_mask1);
 
         if ~valsep
-            [wt, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2)],modelmd_corrcoef(utl_mask2));
+            [wt, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) ],modelmd_corrcoef(utl_mask2));
+            if  intens_reg
+                [wt, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) modelmd_corrcoef_int(utl_mask2)],modelmd_corrcoef(utl_mask2));
+            end
         else
             [wt, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],modelmd_corrcoef(utl_mask_blk));
+            if  intens_reg
+                [wt, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)...
+                    modelmd_corrcoef_int(utl_mask_blk) ],modelmd_corrcoef(utl_mask_blk));
+            end
         end
-        rsa_P1(s,ii,:)  = t_scores(2:end);
-        rsa_P1wt(s,ii,:)  =wt(2:end);
+        rsa_P1(s,ii,:)  = t_scores(2:3);
+        rsa_P1wt(s,ii,:)  =wt(2:3);
 
 
         % utl_mask = logical(triu(ones(length(val_mat)),1)); % All possible odors
@@ -331,6 +351,8 @@ for s = [1 2 3] % Subject
 end
 savefig(fullfile(savepath,'imagescr'))
 print(fullfile(savepath,'imagescr'),'-dpng')
+df = nchoosek(7,2);
+p_values_3d = ARC_RSA_pvals(rsa_P1, rsa_P1wt, df)
 
 mkdir(savepath)
 
@@ -473,7 +495,6 @@ if imger
 end
 
 %% RDMs
-val_sc = linspace(-1,1,7);
 figure()
 hold on
 subplot(2,4,1)
@@ -527,5 +548,4 @@ xlabel('Pleasantness')
 colorbar
 
 %% P values of regression:
-df = nchoosek(7,2);
-p_values_3d = ARC_RSA_pvals(rsa_P1, rsa_P1wt, df)
+
