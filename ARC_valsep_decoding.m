@@ -13,13 +13,13 @@ anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 % anat_masks = {'rwPC.nii','rwAmygdala.nii','rwThal.nii','frontal_sal.nii','frontal_val.nii'};
 nanat = length(anat_names);
 medianize_behav = true;
-
+shuffler = true;
 rangenormer = false;
 smoter = false;
 pca_maker = false;
 discretizer = true;
-switcher = 'CrossdecNeural'; % 'Basic'; 'Domainpart'; 'Neuralpart'; 'Crossdec';'CrossdecNeural'
-savename = 'Neuralpart\CrossNP_puredomain';
+switcher = 'Domainpart'; % 'Basic'; 'Domainpart'; 'Neuralpart'; 'Crossdec';'CrossdecNeural'
+savename = 'temp_valsep';
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
 % load('C:\Data\NEMO\swampsunset.mat');
@@ -33,8 +33,8 @@ wt_adj = false;
 
 sess_l = repmat([0],1,2,3);
 dirs = {fullfile(root,'\ARC01\mediation');
-    fullfile(root,'\ARC01\mediation');
-    fullfile(root,'\ARC01\mediation')};
+    fullfile(root,'\ARC02\mediation');
+    fullfile(root,'\ARC03\mediation')};
 behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
 modelname = fullfile('Decoding',switcher);
 savepath = fullfile(root,'Decoding',savename);
@@ -50,6 +50,16 @@ rs = zeros(3,1);
 hold on
 % Subject - index
 kk = 1;
+
+if fmasker
+    % ffile ='C:\Work\ARC\ARC\RSA\controls\main\ARC_RSA.mat';
+    % ffile = 'C:\Work\ARC\ARC\RSA\Basic\ARC_RSA.mat';
+    ffile = 'C:\Work\ARC\ARC\RSA\temp_valsep_rn5_diag\ARC_RSA.mat';
+else
+    ffile = 'C:\Work\ARC\ARC\RSA\basic_fullvox\ARC_RSA.mat';
+end
+
+
 for s = [1 2 3] % Subject
     fprintf('Subject: %02d\n',s)
     anatdir = fullfile(root,sprintf('ARC%02d',s),'single');
@@ -124,6 +134,10 @@ for s = [1 2 3] % Subject
 
     behav_ratings_ = behav_ratings(group_vec);
 
+    % Shufle sanity check
+    if shuffler
+    behav_ratings_ = behav_ratings_(randperm(length(behav_ratings_)));
+    end
     for ii = 1:length(anat_names)
         fprintf('area:%02d\n',ii)
         modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
@@ -284,13 +298,13 @@ for s = [1 2 3] % Subject
 
                 % % Valsep
             case 'Neuralpart'
-                load('C:\Work\ARC\ARC\Decoding\t_score_mat.mat')
+                load('C:\Work\ARC\ARC\RSA\controls\main\ARC_RSA.mat','t_score_mat')
                 assert(size(neural_val,2)==size(t_score_mat{s,ii},1))
                 thr = tinv(0.975,size(t_score_mat{s,ii},1));
-                % pospop = and(t_score_mat{s,ii}(:,1)>thr,t_score_mat{s,ii}(:,2)<thr);
-                % negpop = and(t_score_mat{s,ii}(:,2)>thr,t_score_mat{s,ii}(:,1)<thr);
-                pospop = t_score_mat{s,ii}(:,1)>thr;
-                negpop = t_score_mat{s,ii}(:,2)>thr;
+                pospop = and(t_score_mat{s,ii}(:,1)>thr,t_score_mat{s,ii}(:,2)<thr);
+                negpop = and(t_score_mat{s,ii}(:,2)>thr,t_score_mat{s,ii}(:,1)<thr);
+                % pospop = t_score_mat{s,ii}(:,1)>thr;
+                % negpop = t_score_mat{s,ii}(:,2)>thr;
                 neural_val_pos = neural_val(labels_val>binzc,pospop); % Pos pop coding pos
                 neural_val_neg = neural_val(labels_val<binzc,negpop); % Neg pop coding neg
 
@@ -314,13 +328,13 @@ for s = [1 2 3] % Subject
                 dfs(s,ii,2)=length(labels_val_pos);
                 dfs(s,ii,4)=length(labels_val_neg);
             case 'Neuralpart_mutual'
-                load('C:\Work\ARC\ARC\Decoding\t_score_mat.mat')
+                load(ffile,'t_score_mat')
                 assert(size(neural_val,2)==size(t_score_mat{s,ii},1))
                 thr = tinv(0.975,size(t_score_mat{s,ii},1));
-                % pospop = and(t_score_mat{s,ii}(:,1)>thr,t_score_mat{s,ii}(:,2)<thr);
-                % negpop = and(t_score_mat{s,ii}(:,2)>thr,t_score_mat{s,ii}(:,1)<thr);
-                pospop = t_score_mat{s,ii}(:,1)>thr;
-                negpop = t_score_mat{s,ii}(:,2)>thr;
+                pospop = and(t_score_mat{s,ii}(:,1)>thr,t_score_mat{s,ii}(:,2)<thr);
+                negpop = and(t_score_mat{s,ii}(:,2)>thr,t_score_mat{s,ii}(:,1)<thr);
+                % pospop = t_score_mat{s,ii}(:,1)>thr;
+                % negpop = t_score_mat{s,ii}(:,2)>thr;
                 neural_val_pos = neural_val(labels_val>binzc,pospop); % Pos pop coding pos
                 neural_val_neg = neural_val(labels_val<binzc,negpop); % Neg pop coding neg
                 neural_val_pos_cr = neural_val(labels_val>binzc,negpop); % Neg pop coding pos
@@ -334,12 +348,10 @@ for s = [1 2 3] % Subject
                 [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = Classify_Permute_VS2_regress(neural_val_pos_cr, labels_val_pos, 10);
                 [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = Classify_Permute_VS2_regress(neural_val_neg_cr, labels_val_neg, 10);
 
-                legender = {'Val+ from N-}','Val- from N+'};
+                legender = {'Val+ from N+}','Val- from N-'};
 
                 % legender = {'Val+ from N+','Val- from N-','Val+ from N-','Val- from N+'};
 
-                % dfs(s,ii,1)=length(labels_val_pos);
-                % dfs(s,ii,2)=length(labels_val_neg);
                 dfs(s,ii,1)=length(labels_val_pos);
                 dfs(s,ii,2)=length(labels_val_neg);
 
@@ -370,7 +382,7 @@ for s = [1 2 3] % Subject
                 dfs(s,ii,2)=length(labels_val_pos);
 
             case 'CrossdecNeural'
-                load('C:\Work\ARC\ARC\Decoding\t_score_mat.mat')
+                 load(ffile,'t_score_mat')
                 assert(size(neural_val,2)==size(t_score_mat{s,ii},1))
                 thr = tinv(0.975,size(t_score_mat{s,ii},1));
                 pospop = and(t_score_mat{s,ii}(:,1)>thr,t_score_mat{s,ii}(:,2)<thr);
@@ -464,7 +476,10 @@ for plotsw = [true false]
 end
 
 p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs)
-
+ARC_barplot_sig(rsa_P1,p_values_3dt)
+xticks(1:nanat)
+    xticklabels(anat_names);
+    legend({'Val+','Val-'})
 % p_values_3d2 = ARC_combinePValues3D(rsa_P1t, rsa_P1, dfs)
 
 % p_values_3dz = ARC_decoding_pvals_zsc(rsa_P1, dfs)

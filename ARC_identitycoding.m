@@ -47,17 +47,17 @@ dirs2 = {fullfile(root,'\ARC01\single');
 
 behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
 % modelname = fullfile('mainval',sprintf('bin%01d',binz));
-modelname = 'identity';
+modelname = 'temp';
 savepath = fullfile(root,'RSA',modelname);
 v_id = 2; % Index of vector for median splitting odors
 
 % load(fullfile(statpath,'fir_cv.mat'))
 fprintf('\n')
 
-rsa_P1t = zeros(3,nanat,binz);
-rsa_P1t2 = zeros(3,nanat,binz);
-rsa_P1wt = zeros(3,nanat,binz);
-rsa_P1wt2 = zeros(3,nanat,binz);
+rsa_P1t = zeros(3,nanat,2*binz);
+rsa_P1t2 = zeros(3,nanat,2*binz);
+rsa_P1wt = zeros(3,nanat,2*binz);
+rsa_P1wt2 = zeros(3,nanat,2*binz);
 rsa_Pcorr = zeros(3,nanat);
 rsa_prop = zeros(3,nanat,3);
 
@@ -71,6 +71,7 @@ hold on
 w_mat = cell(4,1);
 thr_fdr = zeros(3,2);
 thr_fdranat = zeros(3,2,nanat);
+load('C:\Work\ARC\ARC\RSA\controls\main\ARC_RSA.mat','t_score_mat')
 
 for s = [1 2 3] % Subject
     fprintf('Subject: %02d\n',s)
@@ -105,7 +106,6 @@ for s = [1 2 3] % Subject
     fmask = logical(fmask); % Only choose voxels with significant odor evoked activity
     fmask_1d = fmask(mask);
     marea = and(fmask,mask);
-
     
     if s <3
         anatpath = fullfile(root,sprintf('NEMO_%02d',s),'\imaging\nii\masks');
@@ -171,37 +171,97 @@ for s = [1 2 3] % Subject
         modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
         modelmd = squeeze(modelmd_.modelmd);
         noisepool = modelmd_.noisepool;
+        if single_c
+            modelmd = modelmd(masks_set_cell{ii},:);
+        end
         [r1,~] = find(isnan(modelmd));
         modelmd(r1,:) = [];
         modelmd = zscore(modelmd,[],2);
-        anat_corr = corrcoef(modelmd);
 
-        for pp = 1:binz
-            trial_disc = behav_ratings_disc==pp;
-            trial_mat = and(trial_disc,trial_disc');
-            trial_mask = and(trial_mat,utl_mask);
+        % Binwise RSA for whole population
+        % anat_corr = corrcoef(modelmd);
+        % for pp = 1:binz
+        %     trial_disc = behav_ratings_disc==pp;
+        %     trial_mat = and(trial_disc,trial_disc');
+        %     trial_mask = and(trial_mat,utl_mask);
+        % 
+        %     [temp,tsc] =  ARC_multicomputeWeights_tsc( [behav_matrix(trial_mask) unity(trial_mask) task_run(trial_mask)...
+        %                   sess_run(trial_mask) set_run(trial_mask)], anat_corr(trial_mask)) ;
+        %     rsa_P1wt(s,ii,pp) = temp(2);
+        %     rsa_P1wt2(s,ii,pp) = temp(3);
+        %     rsa_P1t(s,ii,pp) = tsc(2);
+        %     rsa_P1t2(s,ii,pp) = tsc(3);
+        %     [rsa_Pcorr(s,ii),t_scores, rsa_prop(s,ii,:),w_scores] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
+        % end
 
-            [temp,tsc] =  ARC_multicomputeWeights_tsc( [behav_matrix(trial_mask) unity(trial_mask) task_run(trial_mask)...
-                sess_run(trial_mask) set_run(trial_mask)], anat_corr(trial_mask)) ;
-            rsa_P1wt(s,ii,pp) = temp(2);
-            rsa_P1wt2(s,ii,pp) = temp(3);
-            rsa_P1t(s,ii,pp) = tsc(2);
-            rsa_P1t2(s,ii,pp) = tsc(3);
+        assert(size(modelmd,1)==size(t_score_mat{s,ii},1))
+        thr = tinv(0.975,size(t_score_mat{s,ii},1));
+        pospop = and(t_score_mat{s,ii}(:,1)>thr,t_score_mat{s,ii}(:,2)<thr);
+        negpop = and(t_score_mat{s,ii}(:,2)>thr,t_score_mat{s,ii}(:,1)<thr);
+        % pospop = t_score_mat{s,ii}(:,1)>thr;
+        % negpop = t_score_mat{s,ii}(:,2)>thr;
+        
+
+        vid_idx = behav_ratings_>median(behav_ratings_);
+        vid_mat_pos = and(vid_idx,vid_idx');
+        vid_mat_neg = and(~vid_idx,~vid_idx');
 
 
-             [rsa_Pcorr(s,ii),t_scores, rsa_prop(s,ii,:),w_scores] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
-        end
+        trial_mask = and(utl_mask,vid_mat_pos);
+        anat_corr = corrcoef(modelmd(pospop,:));
+        [temp,tsc] =  ARC_multicomputeWeights_tsc( [behav_matrix(trial_mask) unity(trial_mask) task_run(trial_mask)...
+                          sess_run(trial_mask) set_run(trial_mask)], anat_corr(trial_mask)) ;
+        rsa_P1wt(s,ii,1) = temp(2);
+        rsa_P1wt2(s,ii,1) = temp(3);
+        rsa_P1t(s,ii,1) = tsc(2);
+        rsa_P1t2(s,ii,1) = tsc(3);
+        
+        anat_corr = corrcoef(modelmd(negpop,:));
+        [temp,tsc] =  ARC_multicomputeWeights_tsc( [behav_matrix(trial_mask) unity(trial_mask) task_run(trial_mask)...
+                          sess_run(trial_mask) set_run(trial_mask)], anat_corr(trial_mask)) ;
+        rsa_P1wt(s,ii,2) = temp(2);
+        rsa_P1wt2(s,ii,2) = temp(3);
+        rsa_P1t(s,ii,2) = tsc(2);
+        rsa_P1t2(s,ii,2) = tsc(3);
+
+
+
+        trial_mask = and(utl_mask,vid_mat_neg);
+        anat_corr = corrcoef(modelmd(pospop,:));
+        [temp,tsc] =  ARC_multicomputeWeights_tsc( [behav_matrix(trial_mask) unity(trial_mask) task_run(trial_mask)...
+                          sess_run(trial_mask) set_run(trial_mask)], anat_corr(trial_mask)) ;
+        rsa_P1wt(s,ii,3) = temp(2);
+        rsa_P1wt2(s,ii,3) = temp(3);
+        rsa_P1t(s,ii,3) = tsc(2);
+        rsa_P1t2(s,ii,3) = tsc(3);
+        
+        anat_corr = corrcoef(modelmd(negpop,:));
+        [temp,tsc] =  ARC_multicomputeWeights_tsc( [behav_matrix(trial_mask) unity(trial_mask) task_run(trial_mask)...
+                          sess_run(trial_mask) set_run(trial_mask)], anat_corr(trial_mask)) ;
+        rsa_P1wt(s,ii,4) = temp(2);
+        rsa_P1wt2(s,ii,4) = temp(3);
+        rsa_P1t(s,ii,4) = tsc(2);
+        rsa_P1t2(s,ii,4) = tsc(3);
+
+
+
+
+
+
+
     end
 end
+p_values_3d = ARC_RSA_pvals(rsa_P1t2, rsa_P1wt2, sum(trial_mask(:)))
+p_values_matrix = ARC_RSA_pvals_diff(cat(3,rsa_P1t,rsa_P1t2), cat(3,rsa_P1wt,rsa_P1wt2), sum(trial_mask(:)))
 
 ARC_barplot(rsa_P1wt2)
 ylabel('RSA wt')
 xticks(1:4)
 xticklabels(anat_names)
 mkdir(savepath)
-legend({'Val-'})
-savefig(fullfile(savepath,'ARC_RSAwt2'))
-print(fullfile(savepath,'ARC_RSAwt2'),'-dpng')
+legend({'+ve valence-coding vox','-ve valence-coding vox'})
+savefig(fullfile(savepath,'ARC_RSAwt_ident'))
+print(fullfile(savepath,'ARC_RSAwt_ident'),'-dpng')
 
 clear modelmd_ modelmd modelmd2 S1_omat_vals S2_omat_vals unity M_anat M_sal M_val
 save(fullfile(savepath,'ARC_RSA'))
