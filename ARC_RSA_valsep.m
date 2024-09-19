@@ -17,8 +17,8 @@ rangenormer = false;
 num_cntrl = false;
 sz_ctrl = false;
 raw_RSA = false;
-valsep =true;
-intens_reg = false;
+valsep = false;
+intens_reg = true;
     
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise

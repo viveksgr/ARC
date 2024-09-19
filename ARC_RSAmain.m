@@ -14,14 +14,15 @@ anat_names = {'PC','AMY','OFC','VMPFC'};
 anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 nanat = length(anat_names);
 
-num_cntrl = false;
+num_cntrl = true;
 sz_ctrl = false;
-valsep =true;
 intens_reg = false;
+
+valsep = true;
 single_n = false; % Noisepool
 single_c = true; % Cutoff from sign voxels
 zscorer = true;
-rangenormer =true;
+rangenormer =false;
 noblock = false;
 
 nodor = 160;
@@ -31,7 +32,7 @@ dirs = {fullfile(root,'\ARC01\mediation');
     fullfile(root,'\ARC02\mediation');
     fullfile(root,'\ARC03\mediation')};
 behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
-modelname = 'ctrlrange_valsep_perm';
+modelname = 'valsep_numctrl';
 savepath = fullfile(root,'RSA',modelname);
 v_id = 2; % Index of vector for median splitting odors
 
@@ -170,11 +171,12 @@ for s = [1 2 3] % Subject
         % [M1_new, M2_new] = ARC_transformMatrix(behav_ratings_,  modelmd2, binz,[ms1 ms2]);
         if ~rangenormer
             if ~num_cntrl
+                % Basic model
                 modelmd_binned = ARC_binAndTransform(modelmd2, behav_ratings_, binz, [ms1 ms2]);
                 % modelmd_binned_shuff = ARC_binAndTransform_shuff(modelmd2, behav_ratings_, binz, [ms1 ms2],nshuff);
                  modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
             else
-                modelmd_binned = ARC_binAndTransform_sz(modelmd2, behav_ratings_, binz, [ms1 ms2]);
+                modelmd_binned = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, [ms1 ms2]);
             end
         else
             modelmd_binned = ARC_binAndTransformQuantiles(modelmd2, behav_ratings_, binz);
@@ -187,8 +189,7 @@ for s = [1 2 3] % Subject
         end
         if zscorer
             modelmd_binned = zscore(modelmd_binned,[],2);
-        end
-        
+        end       
         modelmd_corrcoef = corrcoef(modelmd_binned);
 
         if sz_ctrl
@@ -234,7 +235,7 @@ for s = [1 2 3] % Subject
                     modelmd_binneds = zscore(modelmd_binneds,[],2);
                 end
                 modelmd_corrcoef2 = corrcoef(modelmd_binneds);
-                [wt_dist(zz,:), t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) ],modelmd_corrcoef2(utl_mask2));
+                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) ],modelmd_corrcoef2(utl_mask2));
             end
 
 
@@ -256,7 +257,7 @@ for s = [1 2 3] % Subject
                      modelmd_binneds = zscore(modelmd_binneds,[],2);
                  end
                 modelmd_corrcoef2 = corrcoef(modelmd_binneds);
-                [wt_dist(zz,:), t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],modelmd_corrcoef2(utl_mask_blk));
+                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],modelmd_corrcoef2(utl_mask_blk));
             end
 
             rsa_Pps(s,ii,:,1:2) = wt_dist(:,2:3);
