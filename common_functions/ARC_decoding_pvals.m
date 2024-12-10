@@ -47,21 +47,24 @@ function [mean_r, p_value] = averageCorrelationsAndTest(corr_vec, dfs)
     % Step 3: Transform the average Fisher z-value back to a correlation
     mean_r = tanh(mean_z);
 
-    % Step 4: Perform a t-test to test if the mean z-value is significantly different from 0
-    % Calculate the standard error of the z-values (SE = 1/sqrt(df-3))
+    % % Step 4: Perform a t-test to test if the mean z-value is significantly different from 0
+    % % Calculate the standard error of the z-values (SE = 1/sqrt(df-3))
     se_z = sqrt(1 ./ (dfs - 3));
-    
-    % Standard error of the mean z-value
-    sem_z = sqrt(sum(se_z.^2) / length(dfs)^2);
-    
+
+    % % Standard error of the mean z-value
+    % sem_z = sqrt(sum(se_z.^2) / length(dfs)^2);
+    sem_z = sqrt(1 / sum(1 ./ (se_z.^2)));
+
+
     % t-value for the mean z-value
     t_stat = mean_z / sem_z;
-    
+
     % Degrees of freedom for the combined test
     total_df = sum(dfs - 3);
-    
+    % 
     % P-value from t-test
-    % p_value = 2 * tcdf(-abs(t_stat), total_df);  % Two-tailed p-value
-    p_value = 1 - tcdf(t_stat, total_df);
+    p_value = 2 * tcdf(-abs(t_stat), total_df);  % Two-tailed p-value
+    % p_value = 1 - tcdf(t_stat, total_df);
+    % p_value = ARC_r2t(mean_r,mean(dfs));
 end
 

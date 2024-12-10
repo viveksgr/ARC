@@ -14,5 +14,5 @@ function p_value = ARC_computePValueOneTailed(r_eff, n, num_samples)
     z_score = (r_eff - chance_accuracy) / std_dev;
     
     % Convert the z-score to a p-value for a one-tailed test
-    p_value = 1 - normcdf(z_score, 0, 1); % Only interested in performance above chance
+    p_value = 2*(1 - normcdf(abs(z_score), 0, 1)); % Only interested in performance above chance
 end

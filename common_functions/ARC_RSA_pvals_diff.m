@@ -9,14 +9,14 @@ function p_values_matrix = ARC_RSA_pvals_diff(t_scores, betas, dfs)
     
     % Iterate over each predictor and calculate the p-value
     kk = 0;
-    for idx = [1,3]
+    for idx = [1,2]
         kk = kk+1;
         for ii = 1:p1
             current_t_scores = t_scores(:, ii, idx);
             current_betas = betas(:,ii, idx);
             % Assuming dfs is either a scalar or a vector length N
-            t_score_ref = t_scores(:, ii, idx+1);
-            beta_ref = betas(:,ii,idx+1);
+            t_score_ref = t_scores(:, ii, 2);
+            beta_ref = betas(:,ii,2);
              p_values_matrix(ii,kk) = computeGroupPValue(current_betas, current_t_scores, beta_ref, t_score_ref, dfs);
         end
         

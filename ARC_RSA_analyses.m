@@ -1,12 +1,12 @@
 %% General Settings
 
-% Main settings adjusted: binz, zscorer, rangenormer, noblock,val_sep,
+% Main settings adjusted: val_sep, fmasker, control conditions
 % shuffler
 
 root = 'C:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
-fmasker = true;
+fmasker = false;
 binz =7 ;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
 
@@ -14,11 +14,11 @@ anat_names = {'PC','AMY','OFC','VMPFC'};
 anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 nanat = length(anat_names);
 
-num_cntrl = true;
+num_cntrl = false;
 sz_ctrl = false;
-intens_reg = false;
+intens_reg = true;
 
-valsep = treue;
+valsep = true;
 single_n = false; % Noisepool
 single_c = true; % Cutoff from sign voxels
 zscorer = true;
@@ -32,7 +32,7 @@ dirs = {fullfile(root,'\ARC01\mediation');
     fullfile(root,'\ARC02\mediation');
     fullfile(root,'\ARC03\mediation')};
 behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
-modelname = 'valsep_numctrl';
+modelname = '\unmasked\control\temp';
 savepath = fullfile(root,'RSA',modelname);
 v_id = 2; % Index of vector for median splitting odors
 
@@ -115,7 +115,6 @@ for s = [1 2 3] % Subject
     anat_cell{s}= anatmasks;
     masks_set(isnan(masks_set))=0;
 
-    masks_set(isnan(masks_set))=0;
     linux_config = false;
     warning('off','all')
     map_area = zeros([size(anat_cell{s}) 2]);
@@ -167,6 +166,9 @@ for s = [1 2 3] % Subject
         [r1,~] = find(isnan(modelmd2));
         modelmd2(r1,:) = [];
 
+        % if s==3
+        %     'beep'
+        % end
         
         % [M1_new, M2_new] = ARC_transformMatrix(behav_ratings_,  modelmd2, binz,[ms1 ms2]);
         if ~rangenormer
@@ -177,6 +179,7 @@ for s = [1 2 3] % Subject
                  modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
             else
                 modelmd_binned = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, [ms1 ms2]);
+                modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
             end
         else
             modelmd_binned = ARC_binAndTransformQuantiles(modelmd2, behav_ratings_, binz);
@@ -194,12 +197,14 @@ for s = [1 2 3] % Subject
 
         if sz_ctrl
             [modelmd_corrcoef] = ARC_binAndTransform_sz(modelmd2, behav_ratings_, binz, [ms1 ms2],100);
+              modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
         end
 
         if intens_reg
             modelmd_binned_int = ARC_binAndTransform(modelmd2, behav_int(group_vec), binz, [min(behav_int) max(behav_int)]);
             % modelmd_binned_int  = zscore(modelmd_binned_int ,[],2);
             modelmd_corrcoef_int  = corrcoef(modelmd_binned_int);
+            modelmd_binned_shuff_int = ARC_binAndTransform_shuffcoarse(modelmd_binned_int);
         end
 
         val_sc = linspace(-1,1,binz);
@@ -220,22 +225,47 @@ for s = [1 2 3] % Subject
         utl_mask2 = logical(triu(ones(length(val_mat)),1)); % All possible odors
         utl_mask = and(utl_mask1,utl_mask2);
         utl_mask_blk = flipud(utl_mask1);
+        utl_mask_blk( binzpart1 , binzpart1 )=false;
         if noblock
         utl_mask_blk = utl_mask2;
         end
 
         if ~valsep
-            [wt, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) ],modelmd_corrcoef(utl_mask2));
+            
+            if  intens_reg
+                des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) modelmd_corrcoef_int(utl_mask2)];
+            else
+                des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) ];
+                des_x_shuff = des_x;
+            end
+                
+
+            [wt, t_scores] = ARC_multicomputeWeights_tsc( des_x,modelmd_corrcoef(utl_mask2));
+            % 
+            % y = regressmeout(modelmd_corrcoef(utl_mask2)',modelmd_corrcoef_int(utl_mask2)')';
+            % [wt, t_scores] = ARC_multicomputeWeights_tsc(  [val_mat(utl_mask2) sal_mat(utl_mask2) ],y);
+
 
             % wt_dist = ARC_multicomputeWeights_shuff([val_mat(utl_mask2) sal_mat(utl_mask2) ], modelmd_binned_shuff,utl_mask2,nshuff);
-            wt_dist = zeros(nshuff,3);
+            wt_dist = zeros(nshuff,size(des_x,2)+1);
             for zz = 1:nshuff
                 modelmd_binneds = squeeze(modelmd_binned_shuff(zz,:,:));
                 if zscorer
                     modelmd_binneds = zscore(modelmd_binneds,[],2);
                 end
                 modelmd_corrcoef2 = corrcoef(modelmd_binneds);
-                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) ],modelmd_corrcoef2(utl_mask2));
+
+
+                if  intens_reg
+                    int_shuff =  squeeze(modelmd_binned_shuff_int(zz,:,:));
+                    if zscorer
+                        int_shuff  = zscore( int_shuff ,[],2);
+                    end
+                    int_shuff_mat  = corrcoef( int_shuff );
+                     des_x_shuff = [des_x(:,1:2) int_shuff_mat(utl_mask2)];
+                end
+
+                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( des_x_shuff,modelmd_corrcoef2(utl_mask2));
             end
 
 
@@ -243,39 +273,60 @@ for s = [1 2 3] % Subject
             rsa_Pp(s,ii,1) = 1-invprctile(wt_dist(:,2),wt(2))/100;
             rsa_Pp(s,ii,2) = 1-invprctile(wt_dist(:,3),wt(3))/100;
 
-            if  intens_reg
-                [wt, t_scores] = ARC_multicomputeWeights_tsc( [val_mat(utl_mask2) sal_mat(utl_mask2) modelmd_corrcoef_int(utl_mask2)],modelmd_corrcoef(utl_mask2));
-            end
         else
-            [wt, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],modelmd_corrcoef(utl_mask_blk));
+            if ii==4
+                'beep'
+            end
+          
+            if  intens_reg
+                des_x = [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)...
+                    modelmd_corrcoef_int(utl_mask_blk) ];
+
+            else
+                des_x = [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)];
+                des_x_shuff = des_x;
+            end
+
+
+            [wt, t_scores] = ARC_multicomputeWeights_tsc(des_x,modelmd_corrcoef(utl_mask_blk));
+
+
+            % y = regressmeout(modelmd_corrcoef(utl_mask_blk)',  modelmd_corrcoef_int(utl_mask_blk)')';
+            % [wt, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],y);
+            % 
 
             % wt_dist = ARC_multicomputeWeights_shuff([valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)], modelmd_binned_shuff,utl_mask_blk,nshuff);
-             wt_dist = zeros(nshuff,3);
+             wt_dist = zeros(nshuff,size(des_x,2)+1);
              for zz = 1:nshuff
                  modelmd_binneds = squeeze(modelmd_binned_shuff(zz,:,:));
                  if  zscorer
                      modelmd_binneds = zscore(modelmd_binneds,[],2);
                  end
                 modelmd_corrcoef2 = corrcoef(modelmd_binneds);
-                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)],modelmd_corrcoef2(utl_mask_blk));
+
+                if  intens_reg
+                    int_shuff =  squeeze(modelmd_binned_shuff_int(zz,:,:));
+                    if zscorer
+                        int_shuff  = zscore( int_shuff ,[],2);
+                    end
+                    int_shuff_mat  = corrcoef( int_shuff );
+                    des_x_shuff = [des_x(:,1:2) int_shuff_mat(utl_mask_blk)];
+                end
+
+                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( des_x_shuff,modelmd_corrcoef2(utl_mask_blk));
             end
 
             rsa_Pps(s,ii,:,1:2) = wt_dist(:,2:3);
             rsa_Pp(s,ii,1) = 1-invprctile(wt_dist(:,2),wt(2))/100;
             rsa_Pp(s,ii,2) = 1-invprctile(wt_dist(:,3),wt(3))/100;
             
-              
-            if  intens_reg
-                [wt, t_scores] = ARC_multicomputeWeights_tsc( [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)...
-                    modelmd_corrcoef_int(utl_mask_blk) ],modelmd_corrcoef(utl_mask_blk));
-            end
+         
         end
         rsa_P1(s,ii,:)  = t_scores(2:3);
         rsa_P1wt(s,ii,:)  =wt(2:3);
 
-
         % Voxwise stuff
-        [rsa_Pcorr(s,ii),t_scores, rsa_prop(s,ii,:),w_scores] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
+        [rsa_Pcorr(s,ii),t_scores, rsa_prop(s,ii,:),w_scores,rsa_Pcorrp(s,ii)] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
 
         w_mat{ii} = cat(1,w_mat{ii},w_scores);
         t_score_mat{s,ii} = t_scores;
@@ -284,7 +335,8 @@ for s = [1 2 3] % Subject
         % thr = tinv(0.975,size(t_scores,1));
 
         df = length(t_scores);
-        func = @(x) 2 * (1 - tcdf(abs(x),df));
+        % func = @(x) 2 * (1 - tcdf(abs(x),df));
+        func = @(x) (1 - tcdf((x),df));
         p1_mat = arrayfun(func,t_scores(:,1));
         p2_mat = arrayfun(func,t_scores(:,2));
 
@@ -359,7 +411,7 @@ savefig(fullfile(savepath,'imagescr'))
 print(fullfile(savepath,'imagescr'),'-dpng')
 df = nchoosek(7,2);
 p_values_3d = ARC_RSA_pvals(rsa_P1, rsa_P1wt, df)
-% rsa_Pp
+rsa_Pp
 
 % pvalue avg
 rsa_Pavg = zeros(nanat,2);
@@ -370,8 +422,17 @@ for ii=1:nanat
         rsa_Pavg(ii,cond)= 1-invprctile(nulldist,meaneff)/100;
     end
 end
+
 % rsa_Pavg
-    
+rsa_Pavg_vox = zeros(nanat,1);
+dfs = cellfun(@length,t_score_mat);
+for ii=1:nanat
+        meaneff = mean(rsa_Pcorr(:,ii))
+        df = mean(dfs(:,ii));
+       rsa_Pavg_vox(ii) = ARC_r2t( meaneff,df);
+
+end
+% Cross domain correlation
 
 mkdir(savepath)
 % RSA beta plot
@@ -386,6 +447,7 @@ else
     legend({'Valence','Salience'})
 end
 savefig(fullfile(savepath,'ARC_RSAwt'))
+print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(savepath,'ARC_RSAwt'),'-dpng')
 
 % RSA correlation domains
@@ -569,3 +631,9 @@ save(fullfile(savepath,'ARC_RSA'))
 %     histogram(abs(behav_ratings),20)
 % end
 %
+
+% Avg behavior
+cid = [behav.behav(1).cid; behav.behav(2).cid; behav.behav(4).cid];
+bv = [behav.behav(1).ratings(:,2); behav.behav(2).ratings(:,2); behav.behav(4).ratings(:,2)];
+cid_g = findgroups(cid);
+val_avg = splitapply(@nanmean,bv,cid_g);

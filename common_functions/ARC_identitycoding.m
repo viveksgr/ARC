@@ -47,7 +47,7 @@ dirs2 = {fullfile(root,'\ARC01\single');
 
 behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
 % modelname = fullfile('mainval',sprintf('bin%01d',binz));
-modelname = 'temp';
+modelname = 'Identity_coding';
 savepath = fullfile(root,'RSA',modelname);
 v_id = 2; % Index of vector for median splitting odors
 
@@ -71,7 +71,7 @@ hold on
 w_mat = cell(4,1);
 thr_fdr = zeros(3,2);
 thr_fdranat = zeros(3,2,nanat);
-load('C:\Work\ARC\ARC\RSA\controls\main\ARC_RSA.mat','t_score_mat')
+load('C:\Work\ARC\ARC\RSA\main_perm\ARC_RSA.mat','t_score_mat')
 
 for s = [1 2 3] % Subject
     fprintf('Subject: %02d\n',s)
@@ -259,7 +259,7 @@ ylabel('RSA wt')
 xticks(1:4)
 xticklabels(anat_names)
 mkdir(savepath)
-legend({'+ve valence-coding vox','-ve valence-coding vox'})
+legend({'Val+ in +ve vox','Val+ in -ve vox','Val- in +ve vox','Val- in -ve vox'})
 savefig(fullfile(savepath,'ARC_RSAwt_ident'))
 print(fullfile(savepath,'ARC_RSAwt_ident'),'-dpng')
 

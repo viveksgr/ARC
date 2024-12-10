@@ -40,5 +40,6 @@ function p_value = computeGroupPValue(betas, t_scores, dfs)
     
     % Compute p-value (using the minimum df for simplicity)
     min_df = min(dfs);
-    p_value = 2 * tcdf(-abs(tScore), min_df);  % Two-tailed p-value
+    p_value =  1-tcdf((tScore), min_df);  % Two-tailed p-value
+    % p_value = 2 * tcdf(-abs(tScore), min_df);  % Two-tailed p-value
 end
