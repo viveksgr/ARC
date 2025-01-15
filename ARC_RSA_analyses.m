@@ -16,11 +16,11 @@ nanat = length(anat_names);
 
 num_cntrl = false;
 sz_ctrl = false;
-intens_reg = true;
+intens_reg = false;
 
-valsep = true;
+valsep = false;
 single_n = false; % Noisepool
-single_c = true; % Cutoff from sign voxels
+single_c = true;  % Cutoff from sign voxels
 zscorer = true;
 rangenormer =false;
 noblock = false;
