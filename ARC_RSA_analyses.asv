@@ -36,7 +36,7 @@
 % The script maybe in demo-mode (demomode = true) that loads trial-averaged data instead of
 % single trial data. Adjust it to false for the full model training.
 
-demomode = true; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
+demomode = false; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
 valsep = false;
 num_cntrl = false; % Control analysis for bin size
 sz_ctrl = false; % Control analysis for ROI size
@@ -150,6 +150,7 @@ for s = [1 2 3] % Subject
     S_mat = zeros(length(anat_names),2);
     S_mat2 = zeros(length(anat_names),2);
 
+    if s==3; s2 = 4; else; s2 = s; end
     onsets = load(fullfile(anatdir,sprintf('conditions_NEMO%02d.mat',s)),'onsets');
     onsets = onsets.onsets;
     group_vec = cell(nodor,1);
@@ -337,13 +338,11 @@ for s = [1 2 3] % Subject
         bothAbove = t_scores(:,1) >  thr_fdranat(s,1,ii)  & t_scores(:,2) > thr_fdranat(s,2,ii);  % Both cols above thr
 
         % Pos_population:
-        if ~demomode
         rsa_pos_pop = nanmean(modelmd2( col1Above,:));
         rsa_neg_pop = nanmean(modelmd2( col2Above,:));
 
         map_area(:,:,:,ii,1)  = unmasker(t_scores(:,1),logical(anatmasks(:,:,:,ii)));
         map_area(:,:,:,ii,2) = unmasker(t_scores(:,2),logical(anatmasks(:,:,:,ii)));
-        end
 
 
         %% Figures
