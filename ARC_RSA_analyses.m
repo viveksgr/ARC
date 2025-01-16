@@ -43,7 +43,7 @@ sz_ctrl = false; % Control analysis for ROI size
 intens_reg = false; % Control analysis for Intensity
 
 % root = 'C:\Work\ARC\Scripts';
-root = 'C:\Work\ARC\ARC';
+mainroot = 'C:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
 fmasker = false;
@@ -62,10 +62,10 @@ noblock = false;
 
 nodor = 160;
 nshuff = 1000;
-behav = load(fullfile(root,'supporting_files','NEMO_perceptual.mat'));
+behav = load(fullfile(mainroot,'supporting_files','NEMO_perceptual.mat'));
 
-modelname = 'temp';
-savepath = fullfile(root,'results',modelname);
+modelname = 'temp3';
+savepath = fullfile(mainroot,'results',modelname);
 v_id = 2; % Index of vector for median splitting odors
 
 % load(fullfile(statpath,'fir_cv.mat'))
@@ -92,8 +92,8 @@ hold on
 kk = 1;
 for s = [1 2 3] % Subject
     fprintf('Subject: %02d\n',s)
-    anatdir = fullfile(root,sprintf('ARC%02d',s),'single');
-    if demomode;  anatdir = fullfile(root,'supporting_files',sprintf('ARC%02d',s)); load(fullfile(root,'supporting_files','modelbinned_mat.mat')); end
+    anatdir = fullfile(mainroot,sprintf('ARC%02d',s),'single');
+    if demomode;  anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s)); load(fullfile(mainroot,'supporting_files','modelbinned_mat.mat')); end
 
     % Construction of median split
     behav_ratings = behav.behav(s).ratings(:,v_id);
@@ -388,11 +388,12 @@ for s = [1 2 3] % Subject
 
     map_mat(isnan(map_mat))=0;
     mkdir(savepath)
+    if demomode
     write_reshaped_nifty(squeeze(map_mat(:,:,:,1)), savepath, false, fullfile(anatdir,maskfile), sprintf('ARC%02d_valp',s));
     write_reshaped_nifty(squeeze(map_mat(:,:,:,2)), savepath, false, fullfile(anatdir,maskfile), sprintf('ARC%02d_valn',s));
-
+    end
 end
-savefig(fullfile(savepath,'imagescr'))
+% savefig(fullfile(savepath,'imagescr'))
 print(fullfile(savepath,'imagescr'),'-dpng')
 
 
@@ -428,8 +429,8 @@ if valsep
 else
     legend({'Valence','Salience'})
 end
-savefig(fullfile(savepath,'ARC_RSAwt'))
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
+% savefig(fullfile(savepath,'ARC_RSAwt'))
+% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(savepath,'ARC_RSAwt'),'-dpng')
 
 % RSA correlation domains
@@ -444,23 +445,22 @@ end
 xticks(1:nanat)
 xticklabels(anat_names);
 ylabel('t score of correlation')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxwise_similarity'),'.svg']) % svg
-savefig(fullfile(savepath,'voxwise_similarity'))
+% print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxwise_similarity'),'.svg']) % svg
+% savefig(fullfile(savepath,'voxwise_similarity'))
 print(fullfile(savepath,'voxwise_similarity'),'-dpng')
 
 % RSA sig. voxels
-figure()
 ARC_barplot(rsa_prop)
 xticks(1:nanat)
 xticklabels(anat_names);
 ylabel('Fraction voxels')
 legend({'only Val+', 'only Val-', 'both'})
-savefig(fullfile(savepath,'voxprop'))
+% savefig(fullfile(savepath,'voxprop'))
 print(fullfile(savepath,'voxprop'),'-dpng')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxprop'),'.svg']) % svg
+% print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxprop'),'.svg']) % svg
 
 % Scatter density
-figure()
+figure('Position', [0.5 0.5 1280 240])
 hold on
 kk = 0;
 for ii = 1:4
@@ -476,8 +476,8 @@ for ii = 1:4
     ylim([-0.4 1])
     yticks([-0.4 0.3 1])
 end
-savefig(fullfile(savepath,'ARC_dens'))
+% savefig(fullfile(savepath,'ARC_dens'))
 print(fullfile(savepath,'ARC_dens'),'-dpng')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens'),'.svg']) % svg
+% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens'),'.svg']) % svg
 SFP_clearLargeVariables
-save(fullfile(savepath,'ARC_RSA'))
+% save(fullfile(savepath,'ARC_RSA'))
