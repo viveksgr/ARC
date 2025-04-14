@@ -2,15 +2,15 @@
 
 %% General settings
 linux_config = false;
-s = 1;
-nvol = 856; % 856 for S1, 876 for S2, S3;
+s = 2;
+nvol = 876; % 856 for S1, 876 for S2, S3;
 anat_mask = 'ARC3_anatgw.nii';
-mname = 'DLPFC';
-anat_name = {'DLPFC'};
-anat_area = {'rwDLPFC.nii'};
+mname = 'insula'; % name of folder
+anat_name = {'insula'}; % name of anatomical label
+anat_area = {'rwinsula.nii'};
 
-sess_i = 1;
-sess_f = 3;
+sess_i = 2;
+sess_f = 4;
 TRdur  = 0;
 set_i = 1;
 set_f = 4;
@@ -45,7 +45,11 @@ else
     addpath('C:\Work\Tools\\GLMsingle-main\matlab\utilities')
     statpath = fullfile('C:\Work\ARC\ARC',sprintf('ARC%02d',s),'single');
     maskpaths = statpath;
-    datapath = fullfile('C:\Work\NEMO Extended\Imaging\',sprintf('NEMO_%02d',s),'\nii');
+    if s==3
+        s=4;
+    end
+    datapath = fullfile('C:\Work\NEMO Extended\Imaging\',sprintf('NEMO_%02d',s),'imaging\nii');
+    % C:\Work\NEMO Extended\Imaging\NEMO_02\nii
 end
 
 % Load files
@@ -63,7 +67,7 @@ for set_ = set_i: set_f
             if s==1
                 ns = dir(fullfile(path_,sprintf('nusiance_regresssors_NEMO_%02d_set_%02d_sess_%02d_run_%02d.txt',s,set_,sess_,run_)));
             else
-                ns = dir(fullfile(path_,sprintf('nusiance_regresssors_NEMO%02d_set_%02d_sess_%02d_run_%02d.txt',s,set_,sess_,run_)));
+                ns = dir(fullfile(path_,sprintf('nuisance_regresssors_NEMO%02d_set_%02d_sess_%02d_run_%02d.txt',s,set_,sess_,run_)));
             end
             noise_files{rr} =  load(fullfile(path_,ns(1).name));
             for i=1:nvol
@@ -79,7 +83,7 @@ filename = fullfile(statpath, 'nuisance*.txt');
 n = dir(filename);
 mp = cat(1,noise_files{:});
 % mp = load(fullfile(statpath, n(1).name));
-% mp(:,35:end)=[];
+mp(:,35:end)=[];
 tic
 for aa = 1:length(anat_name)
     % Gray matter masks

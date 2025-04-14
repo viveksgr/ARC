@@ -36,14 +36,22 @@
 % The script maybe in demo-mode (demomode = true) that loads trial-averaged data instead of
 % single trial data. Adjust it to false for the full model training.
 
-demomode = true; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
-valsep = false;
+demomode = false; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
+valsep = true;
 num_cntrl = false; % Control analysis for bin size
 sz_ctrl = false; % Control analysis for ROI size
 intens_reg = false; % Control analysis for Intensity
-
+sniff_ctrl = false;
+bias_correct = true;
 % root = 'C:\Work\ARC\Scripts';
 mainroot = 'C:\Work\ARC\ARC';
+modelname = 'basic_biascorrect_valsep';
+savepath = fullfile(mainroot,'results',modelname); 
+v_ids = [2 2 2];
+% v_ids = [14 13 13]; % Index of vector for median splitting odors
+% v_ids = [0 17 17];
+
+
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
 fmasker = false;
@@ -52,6 +60,9 @@ if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 
 
 anat_names = {'PC','AMY','OFC','VMPFC'};
 anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
+% 
+% anat_names = {'Insula','Hipp','DLPFC','A1'};
+% anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwaud.nii'};
 nanat = length(anat_names);
 
 
@@ -64,20 +75,18 @@ nodor = 160;
 nshuff = 1000;
 behav = load(fullfile(mainroot,'supporting_files','NEMO_perceptual.mat'));
 
-modelname = 'temp3';
-savepath = fullfile(mainroot,'results',modelname);
-v_id = 2; % Index of vector for median splitting odors
+if sniff_ctrl; load(fullfile(mainroot,'supporting_files','sniff_corr_ctrl.mat')); end
 
 % load(fullfile(statpath,'fir_cv.mat'))
 fprintf('\n')
-
+ 
 % Result matrics
-rsa_P1 = zeros(3,nanat,2); % For t-scores in anatomical areas
-rsa_P1wt = zeros(3,nanat,2); % For beta-wts in anatomical areas
-rsa_Pp = zeros(3,nanat,2); % p-values of RSA
-rsa_Pps = zeros(3,nanat,nshuff,2); % Null distributions
-rsa_Pcorr = zeros(3,nanat); % Correlation of beta weights across domains
-rsa_prop = zeros(3,nanat,3);  % Proportion of significant voxels in each regions
+rsa_P1 = nan(3,nanat,2); % For t-scores in anatomical areas
+rsa_P1wt = nan(3,nanat,2); % For beta-wts in anatomical areas
+rsa_Pp = nan(3,nanat,2); % p-values of RSA
+rsa_Pps = nan(3,nanat,nshuff,2); % Null distributions
+rsa_Pcorr = nan(3,nanat); % Correlation of beta weights across domains
+rsa_prop = nan(3,nanat,3);  % Proportion of significant voxels in each regions
 modelbinned_mat = cell(3,nanat); % Matrix of subjectxROI binned values of neural responses for demo
 
 t_score_mat = cell(3,4);
@@ -91,16 +100,22 @@ figure1 = figure('OuterPosition',[297 183 1209 737]);
 hold on
 kk = 1;
 for s = [1 2 3] % Subject
+    v_id = v_ids(s);
     fprintf('Subject: %02d\n',s)
+
+    if v_id==0
+        continue
+    else
+
     anatdir = fullfile(mainroot,sprintf('ARC%02d',s),'single');
     if demomode;  anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s)); load(fullfile(mainroot,'supporting_files','modelbinned_mat.mat')); end
 
     % Construction of median split
     behav_ratings = behav.behav(s).ratings(:,v_id);
+    % behav_ratings = behav_ratings-median(behav_ratings);
 
-    % behav_ratings = behav_ratings(randperm(length(behav_ratings)));
     behav_int = behav.behav(s).ratings(:,1);
-    behav_ratings = normalize(behav_ratings,'medianiqr');
+    if ~bias_correct; behav_ratings = normalize(behav_ratings,'medianiqr'); end
     ms1 = min(behav_ratings);
     ms2 = max(behav_ratings);
     behav_int = normalize( behav_int,'medianiqr');
@@ -165,6 +180,11 @@ for s = [1 2 3] % Subject
     utl_mask = logical(triu(ones(length(unity)),1)); % All possible odors
 
     behav_ratings_ = behav_ratings(group_vec);
+  
+       if bias_correct
+             bias_idx = ARC_median_balance_zero( behav_ratings_);
+            behav_ratings_ = behav_ratings_(bias_idx);
+        end
 
 
     for ii = 1:length(anat_names)
@@ -187,6 +207,10 @@ for s = [1 2 3] % Subject
             fprintf('size:%02d\n',size(modelmd,1))
             [r1,~] = find(isnan(modelmd2));
             modelmd2(r1,:) = [];
+        end
+
+        if bias_correct
+            modelmd2 = modelmd2(:, bias_idx);         
         end
 
         if ~num_cntrl
@@ -249,8 +273,15 @@ for s = [1 2 3] % Subject
             if  intens_reg
                 % Intensity control
                 des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) modelmd_corrcoef_int(utl_mask2)];
+            elseif sniff_ctrl
+
+                fprintf('sniff ctrl in progress...')
+                des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) sniff_corr{s}(utl_mask2)];
+                des_x_shuff = des_x;
             else
+
                 des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) ];
+
                 des_x_shuff = des_x;
             end
 
@@ -284,7 +315,11 @@ for s = [1 2 3] % Subject
             if  intens_reg
                 des_x = [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)...
                     modelmd_corrcoef_int(utl_mask_blk) ];
+            elseif sniff_ctrl
+                des_x = [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk) sniff_corr{s}(utl_mask_blk)];
+                des_x_shuff = des_x;
             else
+
                 des_x = [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)];
                 des_x_shuff = des_x;
             end
@@ -338,11 +373,11 @@ for s = [1 2 3] % Subject
 
         % Pos_population:
         if ~demomode
-        rsa_pos_pop = nanmean(modelmd2( col1Above,:));
-        rsa_neg_pop = nanmean(modelmd2( col2Above,:));
+            rsa_pos_pop = nanmean(modelmd2( col1Above,:));
+            rsa_neg_pop = nanmean(modelmd2( col2Above,:));
 
-        map_area(:,:,:,ii,1)  = unmasker(t_scores(:,1),logical(anatmasks(:,:,:,ii)));
-        map_area(:,:,:,ii,2) = unmasker(t_scores(:,2),logical(anatmasks(:,:,:,ii)));
+            map_area(:,:,:,ii,1)  = unmasker(t_scores(:,1),logical(anatmasks(:,:,:,ii)));
+            map_area(:,:,:,ii,2) = unmasker(t_scores(:,2),logical(anatmasks(:,:,:,ii)));
         end
 
 
@@ -389,11 +424,12 @@ for s = [1 2 3] % Subject
     map_mat(isnan(map_mat))=0;
     mkdir(savepath)
     if demomode
-    write_reshaped_nifty(squeeze(map_mat(:,:,:,1)), savepath, false, fullfile(anatdir,maskfile), sprintf('ARC%02d_valp',s));
-    write_reshaped_nifty(squeeze(map_mat(:,:,:,2)), savepath, false, fullfile(anatdir,maskfile), sprintf('ARC%02d_valn',s));
+        write_reshaped_nifty(squeeze(map_mat(:,:,:,1)), savepath, false, fullfile(anatdir,maskfile), sprintf('ARC%02d_valp',s));
+        write_reshaped_nifty(squeeze(map_mat(:,:,:,2)), savepath, false, fullfile(anatdir,maskfile), sprintf('ARC%02d_valn',s));
+    end
     end
 end
-% savefig(fullfile(savepath,'imagescr'))
+savefig(fullfile(savepath,'imagescr'))
 print(fullfile(savepath,'imagescr'),'-dpng')
 
 
@@ -404,8 +440,8 @@ df = nchoosek(7,2);
 rsa_Pavg = zeros(nanat,2);
 for ii=1:nanat
     for cond = 1:2
-        meaneff = mean(rsa_P1wt(:,ii,cond));
-        nulldist = mean(squeeze(rsa_Pps(:,ii,:,cond)),1);
+        meaneff = nanmean(rsa_P1wt(:,ii,cond));
+        nulldist = nanmean(squeeze(rsa_Pps(:,ii,:,cond)),1);
         rsa_Pavg(ii,cond)= 1-invprctile(nulldist,meaneff)/100;
     end
 end
@@ -414,13 +450,13 @@ end
 rsa_Pavg_vox = zeros(nanat,1);
 dfs = cellfun(@length,t_score_mat);
 for ii=1:nanat
-    meaneff = mean(rsa_Pcorr(:,ii));
-    df = mean(dfs(:,ii));
+    meaneff = nanmean(rsa_Pcorr(:,ii));
+    df = nanmean(dfs(:,ii));
     rsa_Pavg_vox(ii) = ARC_r2t( meaneff,df);
 end
 
 % Cross domain correlation
-ARC_barplot_sig(rsa_P1wt,rsa_Pavg)
+ARC_barplot_sig(rsa_P1wt,rsa_Pavg,true)
 ylabel('RSA beta')
 xticks(1:nanat)
 xticklabels(anat_names)
@@ -429,15 +465,15 @@ if valsep
 else
     legend({'Valence','Salience'})
 end
-% savefig(fullfile(savepath,'ARC_RSAwt'))
-% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
+savefig(fullfile(savepath,'ARC_RSAwt'))
+print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(savepath,'ARC_RSAwt'),'-dpng')
 
 % RSA correlation domains
 figure()
 hold on
-bar(1:nanat,mean(rsa_Pcorr))
-errorbar(1:nanat,mean(rsa_Pcorr),std(rsa_Pcorr)/3,'.')
+bar(1:nanat,nanmean(rsa_Pcorr))
+errorbar(1:nanat,nanmean(rsa_Pcorr),nanstd(rsa_Pcorr)/3,'.')
 c_s = {'r','g','b'}; % Data dots for subjects
 for jj = 1:3 % For bars for perceptual, chemical and combinations
     plot(1:nanat,rsa_Pcorr(jj,:),c_s{jj})
@@ -445,8 +481,8 @@ end
 xticks(1:nanat)
 xticklabels(anat_names);
 ylabel('t score of correlation')
-% print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxwise_similarity'),'.svg']) % svg
-% savefig(fullfile(savepath,'voxwise_similarity'))
+print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxwise_similarity'),'.svg']) % svg
+savefig(fullfile(savepath,'voxwise_similarity'))
 print(fullfile(savepath,'voxwise_similarity'),'-dpng')
 
 % RSA sig. voxels
@@ -455,9 +491,9 @@ xticks(1:nanat)
 xticklabels(anat_names);
 ylabel('Fraction voxels')
 legend({'only Val+', 'only Val-', 'both'})
-% savefig(fullfile(savepath,'voxprop'))
+savefig(fullfile(savepath,'voxprop'))
 print(fullfile(savepath,'voxprop'),'-dpng')
-% print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxprop'),'.svg']) % svg
+print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxprop'),'.svg']) % svg
 
 % Scatter density
 figure('Position', [0.5 0.5 1280 240])
@@ -476,8 +512,44 @@ for ii = 1:4
     ylim([-0.4 1])
     yticks([-0.4 0.3 1])
 end
-% savefig(fullfile(savepath,'ARC_dens'))
+savefig(fullfile(savepath,'ARC_dens'))
 print(fullfile(savepath,'ARC_dens'),'-dpng')
-% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens'),'.svg']) % svg
+print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens'),'.svg']) % svg
 SFP_clearLargeVariables
-% save(fullfile(savepath,'ARC_RSA'))
+save(fullfile(savepath,'ARC_RSA'))
+
+%% Behavioral plots
+figure('Position',[0.5 0.5 960 250])
+v_ids = [2 2 2];
+fname = 'pleasantness';
+hold on
+bin_cent = [];
+for ss = 1:3
+    v_id = v_ids(ss);
+    if v_id<=18
+        subplot(1,3,ss)
+        behav_ratings = behav.behav(ss).ratings(:,v_id);
+
+        behav_ratings = normalize(behav_ratings,'medianiqr');
+
+        [ms1,amin] = min(behav_ratings);
+        [ms2,amax] = max(behav_ratings);
+
+        edges  = linspace(ms1, ms2, 8);
+        cent = edges(1:end-1)+mean(diff(edges))/2;
+        histogram( behav_ratings,edges)
+        if ss==1
+            ylabel(fname)
+        end
+        title(sprintf('subject: %02d',ss))
+
+        xticks(round(cent,2))
+         val_sc = linspace(-1,1,7);
+         
+         cellstr = cellfun(@(x) num2str(round(x,2)), num2cell(val_sc),'UniformOutput',false );
+        xticklabels( cellstr )
+        xtickangle(90)
+    end
+end
+savefig(fname)
+print(fname,'-dpng')
