@@ -2,12 +2,12 @@
 
 %% General settings
 linux_config = false;
-s = 2;
+s = 3;
 nvol = 876; % 856 for S1, 876 for S2, S3;
 anat_mask = 'ARC3_anatgw.nii';
-mname = 'insula'; % name of folder
-anat_name = {'insula'}; % name of anatomical label
-anat_area = {'rwinsula.nii'};
+mname = 'wm'; % name of folder
+anat_name = {'wm'}; % name of anatomical label
+anat_area = {'rwm_main.nii'};
 
 sess_i = 2;
 sess_f = 4;
@@ -48,7 +48,7 @@ else
     if s==3
         s=4;
     end
-    datapath = fullfile('C:\Work\NEMO Extended\Imaging\',sprintf('NEMO_%02d',s),'imaging\nii');
+    datapath = fullfile('C:\Work\NEMO Extended\Imaging\',sprintf('NEMO_%02d',s),'\nii');
     % C:\Work\NEMO Extended\Imaging\NEMO_02\nii
 end
 
@@ -95,8 +95,10 @@ for aa = 1:length(anat_name)
     marea(marea<0.01) = 0;
     marea(marea>1) = 1;
     marea = logical(marea);
-    if ~strcmp(anat_name{aa},'wm')
+     if ~strcmp(anat_name{aa},'wm')
         anatmask = and(anatmask,marea);
+    else
+        anatmask = marea;
     end
     % Get data from all voxels in the mask
     Res_V = spm_vol(filestruct);

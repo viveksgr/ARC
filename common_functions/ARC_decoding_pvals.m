@@ -38,6 +38,10 @@ function [mean_r, p_value] = averageCorrelationsAndTest(corr_vec, dfs)
         error('Correlation vector and degrees of freedom vector must be of the same length.');
     end
 
+    nancomp = isnan(corr_vec);
+    corr_vec(nancomp)=[];
+    dfs(nancomp)=[];
+
     % Step 1: Fisher's z-transformation
     z_values = atanh(corr_vec);  % Fisher's z-transform
 
@@ -63,8 +67,8 @@ function [mean_r, p_value] = averageCorrelationsAndTest(corr_vec, dfs)
     total_df = sum(dfs - 3);
     % 
     % P-value from t-test
-    p_value = 2 * tcdf(-abs(t_stat), total_df);  % Two-tailed p-value
+    % p_value = 2 * tcdf(-abs(t_stat), total_df);  % Two-tailed p-value
     % p_value = 1 - tcdf(t_stat, total_df);
-    % p_value = ARC_r2t(mean_r,mean(dfs));
+    p_value = ARC_r2t(mean_r,mean(dfs));
 end
 

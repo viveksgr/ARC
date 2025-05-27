@@ -19,3 +19,5 @@ end
 p_accu = nanmean(accumat);
 [~,p_accut] = ARC_r2t(p_accu,length(testY));
 end
+
+%%

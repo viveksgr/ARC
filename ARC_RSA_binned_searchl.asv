@@ -1,0 +1,132 @@
+%% ============================
+% Binned Searchlight RSA
+% ============================
+% For each subject:
+%  1) load single‐trial whole‐brain activations (voxels×trials)
+%  2) load pleasantness ratings (trials×1)
+%  3) assign each trial to one of `binz` equally‐populated bins
+%  4) for each brain voxel, extract a small sphere of neighbors
+%     and compute a binned neural RSM (binz×binz)
+%  5) regress that RSM against valence & salience model RSMs
+%  6) save out two whole‐brain β‐maps (valence, salience)
+
+%% 1. SETTINGS (edit these)
+subjects   = {'subj01','subj02','subj03'};    % your subject IDs
+datadir    = 'C:\Work\ARC\';                 % base data folder
+behavfile  = fullfile(datadir,'ARC\supporting_files','NEMO_perceptual.mat');
+glm_pattern= 'wm_fullmet_FIR.mat';      % contains neural_data: [voxels×trials]
+                          
+binz       = 7;                              % number of bins
+v_id       = 2;                              % which rating column to use
+
+%% 2. PREQUANTIFY THEORETICAL RSMs (same for all voxels)
+val_sc = linspace(-1,1,binz);             % binned pleasantness values
+sal_sc = abs(val_sc);
+val_mat = 1 - abs(val_sc - val_sc');       % binz×binz
+sal_mat = 1 - abs(sal_sc - sal_sc');
+% flatten upper triangle
+utl = find(triu(true(binz),1));
+val_vec =  val_mat(utl);
+sal_vec =  sal_mat(utl);
+
+%% 3. LOOP OVER SUBJECTS
+for si = 1:numel(subjects)
+    subj = subjects{si};
+    subdir = fullfile(datadir ,'ARC',sprintf('ARC%02d',si),'single');
+    maskfile   = fullfile(subdir,'wm_fullmask.nii');
+
+    % ---- 3.1 load behavior ----
+    B = load(behavfile,'behav');
+    ratings = B.behav(si).ratings(:,v_id);
+    % median‐center & normalize if needed:
+    ratings = ratings - median(ratings);
+    % assign trials → bins (equal‐populated)
+    [~,~,bin_idx] = histcounts(ratings, quantile(ratings, linspace(0,1,binz+1)));
+    
+    % ---- 3.2 load neural data ----
+    glmfile = fullfile(subdir,glm_pattern);
+    D = load(glmfile,'odor_responses');  % assume odor_responses: [voxels×trials]
+    neural_data = D.odor_responses;      % V×T
+    [nvox,T] = size(neural_data);
+    neural_data = squeeze(neural_data(:,6,:));
+    
+    % ---- 3.3 load gray‐matter mask & get voxel coordinates ----
+    Mv = spm_read_vols(spm_vol(maskfile)); 
+    Mv = logical(Mv); 
+    [X,Y,Z] = ind2sub(size(Mv), find(Mv));  % list of mask coords
+    nmask = numel(X);
+
+    % Sanity check for masks
+    assert(sum(Mv(:))==nvox,'White matter mask should match the odor responses')
+
+    % ---- 3.4 precompute spherical offsets around center ----
+    % find all integer offsets within radius_mm in voxel space
+    rget = 3;
+    sz = size(Mv);
+    ref_vox = round(sz/2);
+    [MX, MY, MZ] = ndgrid(1:sz(1),1:sz(2),1:sz(3));
+    radii = sqrt((MX-ref_vox(1)).^2 + (MY-ref_vox(2)).^2 + (MZ-ref_vox(3)).^2);
+    % prototype sphere index for radii<rget that can be used everywhere in the brain
+    radius_index = find(radii<rget) - sub2ind(sz,ref_vox(1),ref_vox(2),ref_vox(3)); % Neighbors index
+
+    % Gray mask configuration
+    lin_index = find(Mv);
+    % resultsvolume index
+    linindexconv = zeros(sz);
+    linindexconv(lin_index) = 1:length(lin_index);
+        
+    
+    % ---- 3.5 prepare outputs ----
+    beta_val = nan(sum(Mv(:)),1);
+    beta_sal = nan(sum(Mv(:)),1);
+    
+    % ---- 3.6 searchlight ----
+    for vi = 1:nvox
+        % absolute voxel index and its neighbors
+        indexindex2 = radius_index + lin_index(vi);
+        indexindex2 = intersect(lin_index, indexindex2);
+        indexindex2 = linindexconv(indexindex2);
+        A = neural_data(indexindex2,:);
+        [r1,~] = find(isnan(A));
+        A(r1,:) = [];
+
+        
+   
+
+        % for each bin, average the trials
+        Binned = nan(binz, numel(indexindex2 ));
+        for b = 1:binz
+            tsel = bin_idx==b;
+            Binned(b,:) = mean(A(:,tsel),2)';
+        end
+        % optionally zscore each row (pattern) across voxels
+        Binned = zscore(Binned,[],2);
+        
+        % neural RSM: bins × bins
+        RSM = corrcoef(Binned');
+        RSM_vec = RSM(utl);
+        
+        % simple pairwise correlations
+        beta_val(vi) = corr(RSM_vec, val_vec);
+        beta_sal(vi) = corr(RSM_vec, sal_vec);
+    end
+    
+    rsa_vec_val = unmasker(rsa_vec_val,logical(anatmasks(:,:,:,ii)));
+    rsa_vec_sal = unmasker(rsa_vec_sal,logical(anatmasks(:,:,:,ii)));
+    outdir = fullfile(subdir,'results_searchl');
+
+     write_reshaped_nifty(beta_val,pwd,false,fullfile(pwd,'wm_fullmask.nii'))
+     write_reshaped_nifty(beta_sal,pwd,false,fullfile(pwd,'wm_fullmask.nii'))
+
+
+    % if ~exist(outdir,'dir'); mkdir(outdir); end
+    % basevol = spm_vol(maskfile);
+    % % write valence β
+    % Vo = basevol; Vo.fname = fullfile(outdir,'beta_valence.nii');
+    % spm_write_vol(Vo, beta_val);
+    % % write salience β
+    % Vo.fname = fullfile(outdir,'beta_salience.nii');
+    % spm_write_vol(Vo, beta_sal);
+    % 
+    fprintf('Done sub %s\n', subj);
+end

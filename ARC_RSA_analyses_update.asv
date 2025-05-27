@@ -1,4 +1,4 @@
-%% RSA Analyses
+% %% RSA Analyses
 % This script performs Representational Similarity Analysis (RSA) on fMRI data
 % to investigate valence, salience, appetitive and aversive representations in neural activity.
 
@@ -38,20 +38,19 @@
 
 demomode = false; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
 valsep = false;
-num_cntrl = false; % Control analysis for bin size
+num_cntrl = true; % Control analysis for bin size
+numctrl_bin = 100;
+
 sz_ctrl = false; % Control analysis for ROI size
 intens_reg = false; % Control analysis for Intensity
 sniff_ctrl = false;
 bias_correct = false;
-dist_regressor = true; % Regress out histogram of trials in pleasantness bins from RSMs
-
-
 % root = 'C:\Work\ARC\Scripts';
 mainroot = 'C:\Work\ARC\ARC';
-modelname = 'regress_cts_mult';
+modelname = 'shuff_dist3';
 savepath = fullfile(mainroot,'results',modelname) ;
 v_ids = [2 2 2];
-% v_ids = [14 13 13]; % Index of vector for median splitting odors
+% v_ids = [14 13 13]; % Warm
 % v_ids = [0 17 17];
 
 maskfile =  'ARC3_anatgw.nii';
@@ -60,12 +59,16 @@ fmasker = false;
 binz =7 ; % Number of bins
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
 
-anat_names = {'PC','AMY','OFC','VMPFC','wm'};
-anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii','rwm_main.nii'};
+% anat_names = {'PC','AMY','OFC','VMPFC','Insula','Hipp','DLPFC','A1','wm'};
+% anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii','rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 
-% anat_names = {'Insula','Hipp','DLPFC','wm'};
-% anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwm_main.nii'};
+anat_names = {'PC','AMY','OFC','VMPFC'};
+anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
+
+% anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
+% anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 nanat = length(anat_names);
+
 single_n = false; % Noisepool from GLM single
 single_c = false;  % Voxelwise cutoff
 zscorer = true; % Normalization
@@ -74,7 +77,6 @@ noblock = false;
 nodor = 160;
 nshuff = 1000;
 behav = load(fullfile(mainroot,'supporting_files','NEMO_perceptual.mat'));
-
 if sniff_ctrl; load(fullfile(mainroot,'supporting_files','sniff_corr_ctrl_correct.mat')); end
 
 % load(fullfile(statpath,'fir_cv.mat'))
@@ -90,6 +92,7 @@ rsa_prop = nan(3,nanat,3);  % Proportion of significant voxels in each regions
 modelbinned_mat = cell(3,nanat); % Matrix of subjectxROI binned values of neural responses for demo
 
 t_score_mat = cell(3,4);
+w_score_mat = cell(3,4);
 w_mat = cell(nanat,1);
 % FDR corrected Stats
 thr_fdr = zeros(3,2);
@@ -112,6 +115,9 @@ for s = [1 2 3] % Subject
 
     % Construction of median split
     behav_ratings = behav.behav(s).ratings(:,v_id);
+
+    % fprintf('Shuffled ratings in progress')
+    % behav_ratings = behav_ratings(randperm(length(behav_ratings)));
     % behav_ratings = behav_ratings-median(behav_ratings);
 
     behav_int = behav.behav(s).ratings(:,1);
@@ -180,12 +186,10 @@ for s = [1 2 3] % Subject
     utl_mask = logical(triu(ones(length(unity)),1)); % All possible odors
 
     behav_ratings_ = behav_ratings(group_vec);
-  
        if bias_correct
              bias_idx = ARC_median_balance_zero( behav_ratings_);
             behav_ratings_ = behav_ratings_(bias_idx);
         end
-
 
     for ii = 1:length(anat_names)
 
@@ -228,7 +232,8 @@ for s = [1 2 3] % Subject
             modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
         else
             % Numerical control
-            modelmd_binned = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, [ms1 ms2]);
+            % 'Run this...'
+            [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, [ms1 ms2],numctrl_bin);
             modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
         end
 
@@ -278,33 +283,27 @@ for s = [1 2 3] % Subject
                 % Intensity control
                 des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) modelmd_corrcoef_int(utl_mask2)];
             elseif sniff_ctrl
-
                 fprintf('sniff ctrl in progress...')
                 des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) sniff_corr{s}(utl_mask2)];
                 des_x_shuff = des_x;
-            
-            elseif dist_regressor
-                edges = linspace(ms1, ms2, binz+1);
-                [ct,~,bin] = histcounts(behav_ratings_, edges);
-                % ctmat = 1-abs(ct-ct');
-
-                ctmat = ct'*ct;
-                ctreg = ctmat(utl_mask2);
-                ctreg = zscore(ctreg);
-                  des_x = [val_mat(utl_mask2) sal_mat(utl_mask2)  ctreg  ];
-                des_x_shuff = des_x;
-
             else
-
                 des_x = [val_mat(utl_mask2) sal_mat(utl_mask2) ];
-
                 des_x_shuff = des_x;
-            end
-
-            [wt, t_scores] = ARC_multicomputeWeights_tsc( des_x,modelmd_corrcoef(utl_mask2));
-
+            end          
+            
             wt_dist = zeros(nshuff,size(des_x,2)+1);
-            for zz = 1:nshuff
+            for zz = 1:nshuff % Bootstrap
+                modelmd_binned = squeeze(modelmd_binned_mat(:,:,zz));
+                if zscorer
+                    modelmd_binned = zscore(modelmd_binned,[],2);
+                end
+                modelmd_corrcoef = corrcoef(modelmd_binned);
+                [wt_dist(zz,:) , ~] = ARC_multicomputeWeights_tsc(des_x,modelmd_corrcoef(utl_mask2));
+            end
+            wt = mean(wt_dist);
+            
+            wt_dist = zeros(nshuff,size(des_x,2)+1);
+            for zz = 1:nshuff % Shuffle
                 modelmd_binneds = squeeze(modelmd_binned_shuff(zz,:,:));
                 if zscorer
                     modelmd_binneds = zscore(modelmd_binneds,[],2);
@@ -319,16 +318,13 @@ for s = [1 2 3] % Subject
                     int_shuff_mat  = corrcoef( int_shuff );
                     des_x_shuff = [des_x(:,1:2) int_shuff_mat(utl_mask2)];
                 end
-                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc( des_x_shuff,modelmd_corrcoef2(utl_mask2));
+                [wt_dist(zz,:), ~] = ARC_multicomputeWeights_tsc(des_x_shuff,modelmd_corrcoef2(utl_mask2));
             end
-
-
             rsa_Pps(s,ii,:,1:2) = wt_dist(:,2:3);
             rsa_Pp(s,ii,1) = 1-invprctile(wt_dist(:,2),wt(2))/100;
             rsa_Pp(s,ii,2) = 1-invprctile(wt_dist(:,3),wt(3))/100;
-
         else
-            if  intens_reg
+            if intens_reg
                 des_x = [valp_mat(utl_mask_blk) valn_mat(utl_mask_blk)...
                     modelmd_corrcoef_int(utl_mask_blk) ];
             elseif sniff_ctrl
@@ -340,9 +336,19 @@ for s = [1 2 3] % Subject
                 des_x_shuff = des_x;
             end
 
-            [wt, t_scores] = ARC_multicomputeWeights_tsc(des_x,modelmd_corrcoef(utl_mask_blk));
             wt_dist = zeros(nshuff,size(des_x,2)+1);
-            for zz = 1:nshuff
+            for zz = 1:nshuff % Bootstrap (num bootstrap = num shuffle)
+                modelmd_binned = squeeze(modelmd_binned_mat(:,:,zz));
+                if zscorer
+                    modelmd_binned = zscore(modelmd_binned,[],2);
+                end
+                modelmd_corrcoef = corrcoef(modelmd_binned);
+                [wt_dist(zz,:) , ~] = ARC_multicomputeWeights_tsc( des_x,modelmd_corrcoef(utl_mask_blk));
+            end
+            wt = mean(wt_dist);
+
+            wt_dist = zeros(nshuff,size(des_x,2)+1);
+            for zz = 1:nshuff % shuffle
                 modelmd_binneds = squeeze(modelmd_binned_shuff(zz,:,:));
                 if  zscorer
                     modelmd_binneds = zscore(modelmd_binneds,[],2);
@@ -366,14 +372,32 @@ for s = [1 2 3] % Subject
             rsa_Pp(s,ii,2) = 1-invprctile(wt_dist(:,3),wt(3))/100;
 
         end
-        rsa_P1(s,ii,:)  = t_scores(2:3);
         rsa_P1wt(s,ii,:)  =wt(2:3);
 
         % Voxwise stuff
-        [rsa_Pcorr(s,ii),t_scores, rsa_prop(s,ii,:),w_scores,rsa_Pcorrp(s,ii)] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
+        % modelmd_binned = squeeze(mean(model_binned_mat,3));
+        % t1 = zeros(nshuff,1);  t2 = zeros(nshuff,3); t3 = zeros(nshuff,1); t4 = zeros(size(modelmd_binned,1),2,nshuff);  t5 = zeros(size(modelmd_binned,1),2,nshuff);      
+        % for zz = 1:nshuff
+        % modelmd_binned = squeeze(model_binned_mat(:,:,zz));
+        % [ t1(zz),t4(:,:,zz), t2(zz,:),t5(:,:,zz),t3(zz)] = ARC_multicomputeWeights_tsc_voxwise(valp_mat, valn_mat, modelmd_binned);
+        % end
+        % rsa_Pcorr(s,ii) = mean(t1); t_scores = squeeze(mean(t4,3)); rsa_prop(s,ii,:) = ...
+        %     mean(t2); w_scores = squeeze(mean(t5,3)); rsa_Pcorrp(s,ii) = mean(t3);
+        % fprintf('Running snuffle')
+        % modelmd_binned_mat = permute(modelmd_binned_shuff,[2 3 1]);
 
-        w_mat{ii} = cat(1,w_mat{ii},w_scores);
+        [rsa_Pcorr(s,ii) , t_scores, rsa_prop(s,ii,:), w_scores, rsa_Pcorrp(s,ii), wt_mat] = ...
+        ARC_multicomputeWeights_tsc_voxwise_boot(valp_mat, valn_mat, modelmd_binned_mat);
+
+        w_score_mat{s,ii} = wt_mat ;
+        wt_mat = permute(wt_mat,[2 1 3]);
+        wt_mat_sort = reshape(wt_mat,[],2);
+        w_mat{ii} = cat(1,w_mat{ii},wt_mat_sort);
+        % w_mat{ii} = cat(1,w_mat{ii},w_scores);
+
+
         t_score_mat{s,ii} = t_scores;
+        % w_score_mat{s,ii} = w_scores;
 
         df = length(t_scores);
         func = @(x) (1 - tcdf((x),df));
@@ -391,7 +415,7 @@ for s = [1 2 3] % Subject
         if ~demomode
             rsa_pos_pop = nanmean(modelmd2( col1Above,:));
             rsa_neg_pop = nanmean(modelmd2( col2Above,:));
-            % 
+            
             % map_area(:,:,:,ii,1)  = unmasker(t_scores(:,1),logical(anatmasks(:,:,:,ii)));
             % map_area(:,:,:,ii,2) = unmasker(t_scores(:,2),logical(anatmasks(:,:,:,ii)));
         end
@@ -512,61 +536,164 @@ savefig(fullfile(savepath,'voxprop'))
 print(fullfile(savepath,'voxprop'),'-dpng')
 print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxprop'),'.svg']) % svg
 
+
 % Scatter density
-figure('Position', [0.5 0.5 1280 240])
+figure('Position', [0.5 0.5 1420 240])
+clims = {[0 5000],[0 6000],[0 60000],[0 30000]};
 hold on
 kk = 0;
-for ii = 1:4
+for ii = 1:nanat
     kk = kk+1;
-    subplot(1,4,kk)
+    subplot(1,nanat,kk)
     hold on
-    ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
+    % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
+   % histogram2(w_mat{ii}(:,1),w_mat{ii}(:,2),'DisplayStyle','tile','BinWidth',[0.05 0.05],'EdgeColor','none')
+
+    w_mat = vertcat(w_score_mat{:,ii});
+    w_mat = reshape(w_mat,[],2);
+   histogram2( w_mat(:,1), w_mat(:,2),'DisplayStyle','tile','BinWidth',[0.05 0.05],'EdgeColor','none')
     xlabel('Val+ RSA beta')
     ylabel('Val- RSA beta')
-    clim([0 1.5])
+    xline(0)
+    yline(0)
+    % clim([0 6])
     xlim([-0.4 1])
     xticks([-0.4 0.3 1])
     ylim([-0.4 1])
     yticks([-0.4 0.3 1])
+    colorbar
+    clim(clims{ii})
 end
-savefig(fullfile(savepath,'ARC_dens'))
-print(fullfile(savepath,'ARC_dens'),'-dpng')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens'),'.svg']) % svg
+savefig(fullfile(savepath,'ARC_dens2'))
+print(fullfile(savepath,'ARC_dens2'),'-dpng')
+print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens2'),'.svg']) % svg
+save(fullfile(savepath,'ARC_wts'),'w_score_mat')
 SFP_clearLargeVariables
 save(fullfile(savepath,'ARC_RSA'))
 
-%% Behavioral plots
-figure('Position',[0.5 0.5 960 250])
-v_ids = [2 2 2];
-fname = 'pleasantness';
+
+%% Fig debug
+% figure()
+% hold on
+% % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
+% histogram2(ofc_means(:,1),ofc_means(:,2),'DisplayStyle','tile','BinWidth',[0.01 0.05],'EdgeColor','none')
+% xlabel('Val+ RSA beta')
+% ylabel('Val- RSA beta')
+% xline(0)
+% yline(0)
+% % clim([0 6])
+% xlim([-0.4 1])
+% xticks([-0.4 0.3 1])
+% ylim([-0.4 1])
+% yticks([-0.4 0.3 1])
+
+
+% Fig percentiles
+% load shuff_mean manually as w_score_mat2 and mainmat as w_score_mat
+figure('Position', [0.5 0.5 1420 240])
 hold on
-bin_cent = [];
-for ss = 1:3
-    v_id = v_ids(ss);
-    if v_id<=18
-        subplot(1,3,ss)
-        behav_ratings = behav(ss).ratings(:,v_id);
+kk = 0;
+clims = {[0 20],[0 25],[0 200],[0 100]};
+pvals= zeros(4,2);
+for ii = 1:nanat
+    kk = ii;
+    subplot(3,nanat,kk)
+    hold on
+    % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
+    cat1 = vertcat(w_score_mat{:,ii});
+    cat2 = vertcat(w_score_mat2{:,ii});
+    mat3 = ARC_inversePercentiles( cat1, cat2 ).*100;
+    pvals(ii,1) = signrank( mat3(:,1), 0.1, 'tail', 'right');
+    pvals(ii,2) = signrank( mat3(:,2), 0.1, 'tail', 'right');
 
-        behav_ratings = normalize(behav_ratings,'medianiqr');
+      [~ ,pvals(ii,1)] =jbtest( mat3(:,1));
+    [~,pvals(ii,2)] = jbtest( mat3(:,2));
 
-        [ms1,amin] = min(behav_ratings);
-        [ms2,amax] = max(behav_ratings);
 
-        edges  = linspace(ms1, ms2, 8);
-        cent = edges(1:end-1)+mean(diff(edges))/2;
-        histogram( behav_ratings,edges)
-        if ss==1
-            ylabel(fname)
-        end
-        title(sprintf('subject: %02d',ss))
+    histogram2( mat3(:,1), mat3(:,2),'DisplayStyle','tile','BinWidth',[5 5],'EdgeColor','none')
+    xlabel('Val+ RSA percentile')
+    ylabel('Val- RSA percentile')
+    colorbar
+    xline(50)
+    yline(50)
+    clim(clims{ii})
 
-        xticks(round(cent,2))
-         val_sc = linspace(-1,1,7);
-         
-         cellstr = cellfun(@(x) num2str(round(x,2)), num2cell(val_sc),'UniformOutput',false );
-        xticklabels( cellstr )
-        xtickangle(90)
-    end
+    kk = ii+nanat;
+    subplot(3,nanat,kk)
+    histogram(mat3(:,1))
+    xlabel('Val+ RSA percentile')
+    ylabel('Freq.')
+
+    kk = ii+2*nanat;
+    subplot(3,nanat,kk)
+    histogram(mat3(:,2))
+    xlabel('Val- RSA percentile')
+    ylabel('Freq.')
+
 end
-savefig(fname)
-print(fname,'-dpng')
+
+
+% %% Behavioral plots
+% figure('Position',[0.5 0.5 960 250])
+% v_ids = [2 2 2];
+% fname = 'pleasantness';
+% hold on
+% bin_cent = [];
+% for ss = 1:3
+%     v_id = v_ids(ss);
+%     if v_id<=18
+%         subplot(1,3,ss)
+%         behav_ratings = behav(ss).ratings(:,v_id);
+% 
+%         behav_ratings = normalize(behav_ratings,'medianiqr');
+% 
+%         [ms1,amin] = min(behav_ratings);
+%         [ms2,amax] = max(behav_ratings);
+% 
+%         edges  = linspace(ms1, ms2, 8);
+%         cent = edges(1:end-1)+mean(diff(edges))/2;
+%         histogram( behav_ratings,edges)
+%         if ss==1
+%             ylabel(fname)
+%         end
+%         title(sprintf('subject: %02d',ss))
+% 
+%         xticks(round(cent,2))
+%          val_sc = linspace(-1,1,7);
+% 
+%          cellstr = cellfun(@(x) num2str(round(x,2)), num2cell(val_sc),'UniformOutput',false );
+%         xticklabels( cellstr )
+%         xtickangle(90)
+%     end
+% end
+% savefig(fname)
+% print(fname,'-dpng')
+% 
+% % Check pdists
+% thr1 = 1.98;
+% thr2 = 1.98;
+% figure('Position', [0.5 0.5 1280 240])
+% edge = [0:0.5:20];
+% for ss = 1:3
+%     thr = tinv(0.90,size(t_score_mat1{s,3},1));
+%     pospop1 = and(t_score_mat1{s,3}(:,1)>thr1,t_score_mat1{s,3}(:,2)<thr);
+%     negpop1 = and(t_score_mat1{s,3}(:,2)>thr2,t_score_mat1{s,3}(:,1)<thr);
+% 
+%     % thr1 = 1.65;
+%     % thr2 = 1.65;
+%     % pospop2 = and(t_score_mat2{s,3}(:,1)>thr1,t_score_mat2{s,3}(:,2)<thr);
+%     % negpop2 = and(t_score_mat2{s,3}(:,2)>thr2,t_score_mat2{s,3}(:,1)<thr);
+% 
+%     subplot(2,3,ss)
+%     hold on
+%     histogram(t_score_mat1{s,3}(pospop1,1),edge)
+%     histogram(t_score_mat{s,3}(pospop1,1),edge)
+%     title(sprintf('RSA val+ OFC Sub: %02d',ss))
+% 
+%     subplot(2,3,ss+3)
+%     hold on
+%     histogram(t_score_mat1{s,3}(negpop1,2),edge)
+%     histogram(t_score_mat{s,3}(negpop1,2),edge)
+%     title(sprintf('RSA val- OFC Sub: %02d',ss))
+% end
+% savefig(fullfile(savepath,'distcompar'))

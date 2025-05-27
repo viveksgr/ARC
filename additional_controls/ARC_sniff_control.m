@@ -20,7 +20,7 @@ dirs2 = {fullfile(root,'ARC\ARC\ARC01\single');
     fullfile(root,'ARC\ARC\ARC03\single')};
 
 behav = load(fullfile('C:\Work\ARC\ARC\ARC','NEMO_perceptual2.mat'));
-savepath = 'C:\Work\SFP\Final_plots\Behavioral\Trialwise RSA\temp';
+savepath = pwd;
 
 sniff_corr = {};
 figure('Position',[0 0 1280 320])
@@ -93,12 +93,12 @@ for ss = 1:length(dirs)
     % hold on
     % 
     % % bin groups:
-    % pls = normalize(pls,'medianiqr');
-    % ms1 = min(pls);
-    % ms2 = max(pls);
-    % md = 0;
-    % edges = linspace( ms1,  ms2, 8);
-    % [~,~,bin] = histcounts(pls, edges);
+    pls = normalize(pls,'medianiqr');
+    ms1 = min(pls);
+    ms2 = max(pls);
+    md = 0;
+    edges = linspace( ms1,  ms2, 8);
+    [~,~,bin] = histcounts(pls, edges);
     % 
     % pls2 = splitapply(@mean,pls,bin);
     % inh_vol2 = splitapply(@mean,inh_vol,bin);
@@ -109,8 +109,8 @@ for ss = 1:length(dirs)
     % ylabel('Sniff Dur')
     title(sprintf('Sub: %02d (bins), r: %.3f, p: %.3f',ss,rval,pval))
 
-    % sniff_bin =    splitapply(@mean,Feat_mat_pruned,bin); 
-    % sniff_corr{ss} = corrcoef(sniff_bin);
+    sniff_bin =    splitapply(@mean,Feat_mat_pruned,bin); 
+    sniff_corr{ss} = corrcoef(sniff_bin');
 end
 
 savefig(fullfile(savepath,'fless_map'))
