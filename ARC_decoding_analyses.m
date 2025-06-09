@@ -1,7 +1,6 @@
 %% General Settings
 
 % Check fmasker
-
 tic
 root = 'C:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
@@ -10,13 +9,6 @@ fmasker = false;
 binz = 7;
 binzc = 4;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
-
-% anat_names = {'PC','AMY','OFC','VMPFC'};
-% anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
-% anat_names = {'PC','AMY','OFC','VMPFC'};
-% anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
-% anat_names = {'PC','AMY','Thal','frontal_sal','frontal_val'};
-% anat_masks = {'rwPC.nii','rwAmygdala.nii','rwThal.nii','frontal_sal.nii','frontal_val.nii'};
 
 anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
 anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};

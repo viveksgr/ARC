@@ -37,7 +37,7 @@
 % single trial data. Adjust it to false for the full model training.
 
 demomode = false; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
-valsep = false;
+valsep = true;
 num_cntrl = true; % Control analysis for bin size
 numctrl_bin = 100;
 
@@ -45,9 +45,13 @@ sz_ctrl = false; % Control analysis for ROI size
 intens_reg = false; % Control analysis for Intensity
 sniff_ctrl = false;
 bias_correct = false;
+seq = false; % Regressout valp valn
+run_shuff = false;
+run_sqdist = false;
+
 % root = 'C:\Work\ARC\Scripts';
 mainroot = 'C:\Work\ARC\ARC';
-modelname = 'shuff_dist3';
+modelname ='temp_main_3';
 savepath = fullfile(mainroot,'results',modelname) ;
 v_ids = [2 2 2];
 % v_ids = [14 13 13]; % Warm
@@ -233,8 +237,10 @@ for s = [1 2 3] % Subject
         else
             % Numerical control
             % 'Run this...'
-            [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, [ms1 ms2],numctrl_bin);
-            modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse(modelmd_binned);
+            [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, numctrl_bin);
+            % modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse_old(modelmd_binned);
+            [~,modelmd_binned_shuff] = ARC_binAndTransform_shuffcoarse(modelmd2, behav_ratings_, binz, numctrl_bin,nshuff);
+            modelmd_binned_shuff = permute(modelmd_binned_shuff,[3 1 2]);
         end
 
         if zscorer
@@ -263,10 +269,15 @@ for s = [1 2 3] % Subject
         valn = val_sc;
         valn(binzpart2:end)=0;
 
+   
         val_mat = 1-abs(val_sc-val_sc');
         valp_mat = 1-abs(valp-valp');
         valn_mat = 1-abs(valn-valn');
         sal_mat = 1-abs(sal_sc-sal_sc');
+        if run_sqdist
+            valp_mat = 1-abs(valp-valp').^2;
+            valn_mat = 1-abs(valn-valn').^2;
+        end
 
         utl_mask1 = logical(blkdiag(zeros(binz-binzpart1),ones(binzpart1)));
         utl_mask2 = logical(triu(ones(length(val_mat)),1)); % All possible odors
@@ -385,15 +396,22 @@ for s = [1 2 3] % Subject
         %     mean(t2); w_scores = squeeze(mean(t5,3)); rsa_Pcorrp(s,ii) = mean(t3);
         % fprintf('Running snuffle')
         % modelmd_binned_mat = permute(modelmd_binned_shuff,[2 3 1]);
-
+        % 
+        % if (ii==3)
+        % 'error'
+        % end
+        if run_shuff
+            fprintf('Running Shuff')
+            modelmd_binned_mat = permute(modelmd_binned_shuff,[2 3 1]);
+        end
         [rsa_Pcorr(s,ii) , t_scores, rsa_prop(s,ii,:), w_scores, rsa_Pcorrp(s,ii), wt_mat] = ...
-        ARC_multicomputeWeights_tsc_voxwise_boot(valp_mat, valn_mat, modelmd_binned_mat);
+        ARC_multicomputeWeights_tsc_voxwise_boot(valp_mat, valn_mat, modelmd_binned_mat,seq);
 
         w_score_mat{s,ii} = wt_mat ;
         wt_mat = permute(wt_mat,[2 1 3]);
         wt_mat_sort = reshape(wt_mat,[],2);
-        w_mat{ii} = cat(1,w_mat{ii},wt_mat_sort);
-        % w_mat{ii} = cat(1,w_mat{ii},w_scores);
+        % w_mat{ii} = cat(1,w_mat{ii},wt_mat_sort);
+        w_mat{ii} = cat(1,w_mat{ii},w_scores);
 
 
         t_score_mat{s,ii} = t_scores;
@@ -551,6 +569,8 @@ for ii = 1:nanat
 
     w_mat = vertcat(w_score_mat{:,ii});
     w_mat = reshape(w_mat,[],2);
+    vec = [-1:0.05:1];
+     vec(mode(discretize(w_mat, vec)))
    histogram2( w_mat(:,1), w_mat(:,2),'DisplayStyle','tile','BinWidth',[0.05 0.05],'EdgeColor','none')
     xlabel('Val+ RSA beta')
     ylabel('Val- RSA beta')

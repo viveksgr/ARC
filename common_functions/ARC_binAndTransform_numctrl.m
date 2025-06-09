@@ -1,6 +1,7 @@
-function [M_new,M_new_mat] = ARC_binAndTransform_numctrl(M, V, b, range,numdesc)
+function [M_new,M_new_mat] = ARC_binAndTransform_numctrl(M, V, b, numdesc)
     % Bin the values in V
-    edges = linspace(range(1), range(2), b+1);
+    ranger = [min(V) max(V)];
+    edges = linspace(ranger(1), ranger(2), b+1);
     [ncounts,~,bin] = histcounts(V, edges);
 
     if nargin<5
@@ -17,7 +18,7 @@ function [M_new,M_new_mat] = ARC_binAndTransform_numctrl(M, V, b, range,numdesc)
     
     for pp = 1:nperm
         
-        bin = bin(randperm(length(bin)));
+        % bin = bin(randperm(length(bin)));
         for i = 1:b
             col_in_bin = find(bin == i); % Find columns in the current bin
 
@@ -26,6 +27,9 @@ function [M_new,M_new_mat] = ARC_binAndTransform_numctrl(M, V, b, range,numdesc)
                 perm_idx = randperm(length(col_in_bin), numdesc_op);
                 selected_cols = col_in_bin(perm_idx); % Select random columns
                 M_matbin = M(:, selected_cols);
+
+                
+
                 M_new_mat(:, i,pp) = mean(M_matbin, 2);
             end
         end

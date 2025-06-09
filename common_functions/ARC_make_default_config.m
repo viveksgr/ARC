@@ -1,0 +1,34 @@
+function cfg = ARC_make_default_config()
+
+% ---------- master toggles ----------
+cfg.demoMode     = false;
+cfg.valenceSplit = true;           % val+/val–
+cfg.numCtrl      = true;
+cfg.sizeCtrl     = false;
+cfg.intensityReg = false;
+cfg.sniffCtrl    = false;
+cfg.zscoreRows   = true;
+cfg.runShuffle   = false;
+cfg.runSqDist    = false;
+
+% ---------- analysis basics ----------
+cfg.mainRoot   = 'C:\Work\ARC\ARC';
+cfg.modelName  = 'temp_main_2';
+cfg.saveRoot   = fullfile(cfg.mainRoot,'results',cfg.modelName);
+
+cfg.subjectList = 1:3;            % which subject IDs to analyse
+cfg.anatNames   = {'PC','AMY','OFC','VMPFC'};
+cfg.anatMasks   = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
+
+cfg.behavFile = fullfile(cfg.mainRoot,'supporting_files','NEMO_perceptual.mat');
+cfg.maskFile  = 'ARC3_anatgw.nii';
+cfg.fMaskFile = 'ARC3_fanatgw3_pos.nii';
+
+cfg.nBin      = 7;
+cfg.nShuffle  = 1000;
+cfg.binzPart1 = ceil((cfg.nBin+1)/2);   % helper for val+/val–
+cfg.binzPart2 = cfg.nBin - cfg.binzPart1 + 1;
+cfg.v_ids = [2 2 2];
+cfg.nodor = 160;
+
+end
