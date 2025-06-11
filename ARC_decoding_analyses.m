@@ -12,6 +12,7 @@ if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 
 
 anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
 anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
+
 nanat = length(anat_names);
 medianize_behav = true;
 shuffler = false;
@@ -122,7 +123,9 @@ for s = [1 2 3] % Subject
     S_mat = zeros(length(anat_names),2);
     S_mat2 = zeros(length(anat_names),2);
 
+  
     if s==3; s2 = 4; else; s2 = s; end
+    
     onsets = load(fullfile(anatdir,sprintf('conditions_NEMO%02d.mat',s2)),'onsets');
     onsets = onsets.onsets;
     group_vec = cell(nodor,1);
@@ -138,6 +141,7 @@ for s = [1 2 3] % Subject
     utl_mask = logical(triu(ones(length(unity)),1)); % All possible odors
 
     behav_ratings_ = behav_ratings(group_vec);
+
 
     % Shufle sanity check
     if shuffler

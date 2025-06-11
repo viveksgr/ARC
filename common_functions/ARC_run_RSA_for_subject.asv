@@ -8,12 +8,10 @@ behav_ratings = roiDat.behav.ratings(:,cfg.v_ids(roiDat.si));
 behav_ratings = normalize(behav_ratings,'medianiqr');
 
 if cfg.splithalf_
-    group_vec = roiDat.group_vec;
-    trial_inc = ismember(roiDat.group_vec,cfg.odor_select);
-    behav_ratings_exp = behav_ratings(roiDat.group_vec(trial_inc));
-else
-    behav_ratings_exp = behav_ratings(roiDat.group_vec(trial_inc));
-end
+    group_vec = roiDat.group_vec)
+
+
+behav_ratings_exp = behav_ratings(roiDat.group_vec);
 
 
 

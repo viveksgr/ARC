@@ -30,9 +30,7 @@ cfg.binzPart1 = ceil((cfg.nBin+1)/2);   % helper for val+/val–
 cfg.binzPart2 = cfg.nBin - cfg.binzPart1 + 1;
 cfg.v_ids = [2 2 2];
 cfg.nodor = 160;
-cfg.splithalf_ = true;
 
-temp = load(fullfile(cfg.mainRoot,'supporting_files','histsplit_ids.mat'));
-cfg.odor_select = temp.idxIn;
+cfg.odor_select = 
 
 end

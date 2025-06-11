@@ -49,6 +49,6 @@ results.group = group;
 % D0 stats and plots
 % ---------- combine & plot ----------
 group = ARC_make_group_stats(wSub, tSub,pSub,cfg);
-create_ARCscatter(w_mat,cfg)
+create_ARCscatter(w_score_mat,cfg)
 
 end
