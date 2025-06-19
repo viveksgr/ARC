@@ -15,7 +15,7 @@ cfg.binCentre    = (cfg.bins+1)/2; % middle bin index (4 when bins = 7)
 cfg.subjects     = [1 2 3];        % subject IDs to analyse
 cfg.behavVector  = 2;              % index into behav.ratings (:,v_id)
 
-cfg.popChoice    = 'pos';          % 'pos','neg','mut'
+cfg.popChoice    = 'neg';          % 'pos','neg','mut'
 cfg.doZscore     = false;          % voxel-wise z-score?
 cfg.noisePoolCut = false;          % drop GLMdenoise noisepool?
 cfg.sigVoxCut    = false;          % keep only sig. odor voxels?
@@ -29,8 +29,21 @@ cfg.ROIs.names = {'PC','AMY','OFC','VMPFC'};
 cfg.ROIs.masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 
 % ── save / load ─────────────────────────────────────────────────────────
-cfg.saveDir      = fullfile(rootDir,'Decoding','RSA_correct','Basic_extraROI');
-cfg.RSAfile      = fullfile(rootDir,'results','temp_main_3','ARC_wts.mat'); % w_score_mat etc.
+cfg.saveDir      = fullfile(rootDir,'Decoding','Mixed_model','Neg');
+
+cfg.splithalf_  = true;
+temp = load(fullfile(cfg.root,'supporting_files','histsplit_ids.mat'));
+cfg.odor_select = temp.idxIn;
+cfg.secondhalf = true;
+
+
+if cfg.secondhalf
+    cfg.RSAfile      = fullfile(rootDir,'results\Mixed','Split_half_I','ARC_RSA.mat'); % w_score_mat
+else
+    cfg.RSAfile      = fullfile(rootDir,'results\Mixed','Split_half_II','ARC_RSA.mat'); % w_score_mat etc.
+end
+
+% cfg.RSAfile      = fullfile(rootDir,'results','temp_main_2','ARC_RSA.mat'); % w_score_mat etc.
 cfg.behavFile    = fullfile(rootDir,'supporting_files','NEMO_perceptual2.mat');
 cfg.trialFile    = fullfile(rootDir,'supporting_files','valence_trials.mat');
 cfg.libsvmPath   = fullfile(rootDir,'supporting_files','libsvm');  % if needed
@@ -39,4 +52,8 @@ cfg.nfold = 4;
 % ── helper derived values ───────────────────────────────────────────────
 cfg.nbSubjects   = numel(cfg.subjects);
 cfg.nbROIs       = numel(cfg.ROIs.names);
+cfg.splithalf_  = true;
+cfg.nested = false;
+
+
 end

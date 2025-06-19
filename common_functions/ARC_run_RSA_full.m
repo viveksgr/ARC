@@ -16,6 +16,7 @@ tSub = cell(nSub,nROI);
 pSub = cell(nSub,nROI);
 pcorr = zeros(nSub,nROI);
 w_score_mat = cell(nSub,nROI);
+w_score_mat_dist = cell(nSub,nROI);
 w_mat = cell(nROI,1);
 
 for si = 1:nSub
@@ -36,6 +37,7 @@ for si = 1:nSub
 
         pcorr(si,ri) = res.t_corr;
         w_score_mat{si,ri} = res.wt_mat;
+        w_score_mat_dist{si,ri} = res.w_scores;
         w_mat{ri} = cat(1,w_mat{ri},res.w_scores);
     end
 end
@@ -44,11 +46,13 @@ end
 results.wSub = wSub;
 results.tSub = tSub;
 results.pSub = pSub;
-results.group = group;
+results.w_score_matdist = w_score_mat_dist;
 
 % D0 stats and plots
 % ---------- combine & plot ----------
 group = ARC_make_group_stats(wSub, tSub,pSub,cfg);
+results.group = group;
+
 create_ARCscatter(w_score_mat,cfg)
 
 end

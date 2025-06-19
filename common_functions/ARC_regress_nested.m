@@ -1,6 +1,6 @@
 function [p_accu, predictions,p_accut] = ARC_regress_nested(nmatred, grp, nfolds,nperm)
     if nargin < 3
-        nfolds = 4; % Default to 10-fold cross-validation if not specified
+        nfolds = 4; % Default to 4-fold cross-validation if not specified
     end
 
     % Initialize variables

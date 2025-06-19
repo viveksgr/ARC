@@ -27,6 +27,7 @@ if cfg.valenceSplit
 else
     legend({'Valence','Salience'})
 end
+mkdir(cfg.saveRoot)
 savefig(fullfile(cfg.saveRoot,'ARC_RSAwt'))
 print(gcf,'-vector','-dsvg',[fullfile(cfg.saveRoot,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(cfg.saveRoot,'ARC_RSAwt'),'-dpng')

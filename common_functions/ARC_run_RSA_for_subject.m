@@ -9,15 +9,20 @@ behav_ratings = normalize(behav_ratings,'medianiqr');
 
 if cfg.splithalf_
     group_vec = roiDat.group_vec;
-    trial_inc = ismember(roiDat.group_vec,cfg.odor_select);
+    if cfg.secondhalf
+        trial_inc = ~ismember(roiDat.group_vec,cfg.odor_select);
+    else
+        trial_inc = ismember(roiDat.group_vec,cfg.odor_select);
+    end
     behav_ratings_exp = behav_ratings(roiDat.group_vec(trial_inc));
+    [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(roiDat.betatrials(:,trial_inc), behav_ratings_exp, cfg.nBin, cfg.numCtrl);
+
 else
-    behav_ratings_exp = behav_ratings(roiDat.group_vec(trial_inc));
+    behav_ratings_exp = behav_ratings(roiDat.group_vec);
+    [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(roiDat.betatrials, behav_ratings_exp, cfg.nBin, cfg.numCtrl);
 end
 
 
-
-[modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(roiDat.betatrials, behav_ratings_exp, cfg.nBin, cfg.numCtrl);
 modelmd_binned_mat = permute(modelmd_binned_mat,[3 1 2]);
 
 [~,modelmd_binned_shuff] = ARC_binAndTransform_shuffcoarse(roiDat.betatrials, behav_ratings_exp, cfg.nBin, cfg.numCtrl,cfg.nShuffle);

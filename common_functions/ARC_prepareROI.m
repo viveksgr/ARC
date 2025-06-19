@@ -20,10 +20,18 @@ end
 if cfg.doZscore, X = zscore(X,0,2); end
 
 % ---- voxel-population indices from RSA weights -------------------------
-load(cfg.RSAfile,'w_score_mat');
+if cfg.splithalf_ 
+    load(cfg.RSAfile,'results');
+    w_score_mat = results.w_score_matdist;
+    ws = w_score_mat{subjIdx,roiIdx};      
+else
+    load(cfg.RSAfile,'w_score_mat');
+    ws = w_score_mat{subjIdx,roiIdx};      
+    ws = squeeze(mean(ws,2));
+    
+end
+    % vox × 2 (val+, val- weights)
 
-ws = w_score_mat{subjIdx,roiIdx};          % vox × 2 (val+, val- weights)
-ws = squeeze(mean(ws,2));
 thr = 0.075;                               % user-defined cutoff
 posIdx =  ws(:,1) > thr & ws(:,2) <  thr;  % val+ specific vox
 negIdx =  ws(:,2) > thr & ws(:,1) <  thr;  % val- specific vox

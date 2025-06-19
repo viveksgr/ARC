@@ -14,6 +14,8 @@ function ARC_histSplit(cell3vec)
 %   x = randn(160,1); y = randn(160,1)+2; z = randn(160,1)*0.5;
 %   ARC_histSplit({x,y,z});
 
+% for ss = 1:3; cell3vec{ss} = behav(ss).ratings(:,2); end
+
 % ── input checks ────────────────────────────────────────────────────────
 if ~iscell(cell3vec) || numel(cell3vec)~=3
     error('Input must be a 1×3 cell array of 160×1 vectors.');

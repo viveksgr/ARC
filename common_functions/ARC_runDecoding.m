@@ -1,7 +1,7 @@
 function ARC_runDecoding(cfg)
 %ARC_runDecoding  Main entry point for the decoding analysis
 
-addpath(cfg.libsvmPath);                              % libsvm, if required
+% addpath(cfg.libsvmPath);                              % libsvm, if required
 % behav = load(cfg.behavFile);                          % behavioural ratings
 trfs = load(cfg.trialFile);     
 
@@ -25,29 +25,53 @@ for sIdx = 1:cfg.nbSubjects
         [neural,posIdx,negIdx,mutIdx,labels] = ...
             ARC_prepareROI(cfg,subj,r,beh);
 
+        labels_pos = labels>cfg.binCentre;
+        labels_neg = labels<cfg.binCentre;
+
+        if cfg.splithalf_ 
+               group_vec = trfs.gr{subj};
+ 
+               if cfg.secondhalf
+                   trial_inc = ~ismember(group_vec,cfg.odor_select);
+               else
+                   trial_inc = ismember(group_vec,cfg.odor_select);
+               end
+
+
+               labels_pos = and(labels_pos,trial_inc);
+               labels_neg = and(labels_neg,trial_inc);
+        end
+
         % choose voxel population ---------------------------------------
         switch cfg.popChoice
             case 'pos'
-                X1 = neural(labels>cfg.binCentre,posIdx);   % V+ coded by positive pop
-                X2 = neural(labels<cfg.binCentre,posIdx);   % V- coded by negative pop
-                y1 = labels(labels>cfg.binCentre);
-                y2 = labels(labels<cfg.binCentre);
+                X1 = neural(labels_pos,posIdx);   % V+ coded by positive pop
+                X2 = neural(labels_neg,posIdx);   % V- coded by negative pop
+                y1 = labels(labels_pos);
+                y2 = labels(labels_neg);
             case 'neg'
-                X1 = neural(labels>cfg.binCentre,negIdx);   % V+ coded by negative pop
-                X2 = neural(labels<cfg.binCentre,negIdx);   % V- coded by positive pop
-                y1 = labels(labels>cfg.binCentre);
-                y2 = labels(labels<cfg.binCentre);
+                X1 = neural(labels_pos,negIdx);   % V+ coded by negative pop
+                X2 = neural(labels_neg,negIdx);   % V- coded by positive pop
+                y1 = labels(labels_pos);
+                y2 = labels(labels_neg);
             case 'mut'                                          % mutually tuned voxels
-                X1 = neural(labels>cfg.binCentre,mutIdx);
-                X2 = neural(labels<cfg.binCentre,mutIdx);
-                y1 = labels(labels>cfg.binCentre);
-                y2 = labels(labels<cfg.binCentre);
+                X1 = neural(labels_pos,mutIdx);
+                X2 = neural(labels_neg,mutIdx);
+                y1 = labels(labels_pos);
+                y2 = labels(labels_neg);
             otherwise, error('Bad popChoice');
         end
 
-        % ▸ decode two tasks (valence+, valence-) -----------------------
-        [r1,~,t1] = ARC_regress_nested2_normed(X1,y1,cfg.nfold,1);
-        [r2,~,t2] = ARC_regress_nested2_normed(X2,y2,cfg.nfold,1);
+        if cfg.nested
+            % ▸ decode two tasks (valence+, valence-) -----------------------
+            [r1,~,t1] = ARC_regress_nested2_normed(X1,y1,cfg.nfold,1);
+            [r2,~,t2] = ARC_regress_nested2_normed(X2,y2,cfg.nfold,1);
+        else
+            % ▸ decode two tasks (valence+, valence-) -----------------------
+            [r1,~,t1] = ARC_regress_normed(X1,y1,cfg.nfold,1);
+            [r2,~,t2] = ARC_regress_normed(X2,y2,cfg.nfold,1);
+        end
+
 
         % store
         beta  (sIdx,r,:) = [r1,r2];

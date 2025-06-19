@@ -13,7 +13,7 @@ cfg.runSqDist    = false;
 
 % ---------- analysis basics ----------
 cfg.mainRoot   = 'C:\Work\ARC\ARC';
-cfg.modelName  = 'temp_main_2';
+cfg.modelName  = 'Mixed\Split_half_01-2';
 cfg.saveRoot   = fullfile(cfg.mainRoot,'results',cfg.modelName);
 
 cfg.subjectList = 1:3;            % which subject IDs to analyse
@@ -32,7 +32,8 @@ cfg.v_ids = [2 2 2];
 cfg.nodor = 160;
 cfg.splithalf_ = true;
 
-temp = load(fullfile(cfg.mainRoot,'supporting_files','histsplit_ids.mat'));
+temp = load(fullfile(cfg.mainRoot,'supporting_files','histsplit_ids_02.mat'));
+cfg.secondhalf = false;
 cfg.odor_select = temp.idxIn;
 
 end
