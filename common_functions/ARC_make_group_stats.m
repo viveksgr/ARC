@@ -1,4 +1,4 @@
-function G = ARC_make_group_stats(wSub, tSub,pSub,cfg)
+function G = ARC_make_group_stats(wSub, tSub,cfg)
 % Combine per-subject RSA outputs into group-level summaries
 
 % Average p-values
@@ -18,7 +18,7 @@ end
 G.rsa_Pavg = rsa_Pavg;
 
 % Cross domain correlation
-ARC_barplot_sig(rsa_P1wt,rsa_Pavg,true)
+ARC_barplot_sig(rsa_P1wt,rsa_Pavg,true,~cfg.valenceSplit)
 ylabel('RSA beta')
 xticks(1:nanat)
 xticklabels(cfg.anatNames)
@@ -27,9 +27,12 @@ if cfg.valenceSplit
 else
     legend({'Valence','Salience'})
 end
+% ylim(cfg.plotlims)
+if cfg.verbose % save results figs etc
 mkdir(cfg.saveRoot)
 savefig(fullfile(cfg.saveRoot,'ARC_RSAwt'))
 print(gcf,'-vector','-dsvg',[fullfile(cfg.saveRoot,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(cfg.saveRoot,'ARC_RSAwt'),'-dpng')
+end
 
 end

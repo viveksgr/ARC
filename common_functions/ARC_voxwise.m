@@ -1,4 +1,9 @@
-function [res] = ARC_voxwise(m1, m2, anatmat)
+function [res] = ARC_voxwise(m1, m2, anatmat,cfg)
+if nargin<4
+    cfgsw = false;
+else
+    cfgsw = true;
+end
 % m1, m2: bin x bin matrices
 % anatmat: N_voxels x bin x B bootstraps
 
@@ -63,7 +68,16 @@ end
 
 t_corr = corr(w_scores(:,1), w_scores(:,2));
 t_corr_sig = ARC_r2t(t_corr, nvox);
-proportions = computeProportions(t_scores, tinv(0.975, nvox));
+
+% thr =  tinv(0.975, nvox);
+if cfgsw
+    thr1 = cfg.thrs_1;
+    thr2 = cfg.thrs_2;
+else
+    thr1 = tinv(0.975, nvox);
+    thr2 = tinv(0.975, nvox);
+end
+proportions = computeProportions(t_scores, thr1, thr2);
 
 res.t_corr = t_corr;
 res.t_scores = t_scores;
@@ -71,14 +85,13 @@ res.proportions= proportions;
 res.w_scores = w_scores;
 res.t_corr_sig = t_corr_sig;
 res.wt_mat = wt_mat;
-
 end
 
-function proportions = computeProportions(t_scores, thr)
+function proportions = computeProportions(t_scores, thr1, thr2)
 % Calculate conditions
-col1Above = t_scores(:,1) > thr & t_scores(:,2) <= thr; % Col 1 above thr, Col 2 not
-col2Above = t_scores(:,2) > thr & t_scores(:,1) <= thr; % Col 2 above thr, Col 1 not
-bothAbove = t_scores(:,1) > thr & t_scores(:,2) > thr;  % Both cols above thr
+col1Above = t_scores(:,1) > thr1 & abs(t_scores(:,2)) <= thr2; % Col 1 above thr, Col 2 not
+col2Above = t_scores(:,2) > thr1 & abs(t_scores(:,1)) <= thr2; % Col 2 above thr, Col 1 not
+bothAbove = t_scores(:,1) > thr1 & t_scores(:,2) > thr1;  % Both cols above thr
 
 % Calculate proportions
 totalRows = size(t_scores, 1);

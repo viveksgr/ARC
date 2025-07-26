@@ -1,7 +1,7 @@
-function ARC_barplot_sig(rsa_P1, rsa_Pp, sw)
+function ARC_barplot_sig(rsa_P1, rsa_Pp, sw,sw2)
 
 if nargin<4
-    nanfilter = false;
+    sw2 = false;
 end
 
 
@@ -13,13 +13,20 @@ S_mat = squeeze(nanmean(rsa_P1));
 S_err = squeeze(nanstd(rsa_P1))./sqrt(size(rsa_P1, 1));  % Corrected to consider dynamic number of subjects
 
 if sw
-    figure('Position', [100, 100, 640, 480])  % Adjusted for better visibility
+    figure('Position', [100, 100, 320, 240])  % Adjusted for better visibility
     hold on
 end
 
 ngroups = size(S_mat, 1);
 nbars = size(S_mat, 2);
-b = bar(S_mat);  % Capture handle to bar for setting colors
+b = bar(S_mat,'FaceColor','flat');  % Capture handle to bar for setting colors
+cs = [1 0.8 0;0.6 0 1];
+if sw2
+for k = 1:nbars
+    b(k).CData = cs(k,:);
+end
+end
+
 colororder("earth")
 
 % Calculating the width for each bar group
@@ -37,13 +44,15 @@ for i = 1:nbars
     for j = 1:ngroups
         % sig_x = x_m(i, j) + offsets(i);  % Adjust x position for each group
         sig_x = x_m(i, j);
-        sig_y = S_mat(j, i) + S_err(j, i) * 1.5;  % Place stars a bit above the error bars
+        sig_y = S_mat(j, i) + sign(S_mat(j, i))*(S_err(j, i) * 1.5);  % Place stars a bit above the error bars
         if rsa_Pp(j, i) < 0.001
             text(sig_x, sig_y, '***', 'HorizontalAlignment', 'center', 'Color', 'r')
         elseif rsa_Pp(j, i) < 0.01
             text(sig_x, sig_y, '**', 'HorizontalAlignment', 'center', 'Color', 'r')
         elseif rsa_Pp(j, i) < 0.05
             text(sig_x, sig_y, '*', 'HorizontalAlignment', 'center', 'Color', 'r')
+        elseif rsa_Pp(j, i) < 0.085
+            text(sig_x, sig_y, '(*)', 'HorizontalAlignment', 'center', 'Color', 'r')
         end
     end
 end

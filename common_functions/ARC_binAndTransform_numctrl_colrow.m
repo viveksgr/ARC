@@ -1,4 +1,4 @@
-function [M_new,M_new_mat,bin] = ARC_binAndTransform_numctrl(M, V, b, numdesc,nperm)
+function [M_new,M_new_mat] = ARC_binAndTransform_numctrl_colrow(M, V, b, numdesc,nperm)
 
 
 if nargin<5
@@ -22,18 +22,20 @@ M_new_mat = zeros(n, b,nperm);
 
 % colmat = zeros(numdesc,nperm);
 for pp = 1:nperm
+     % perm_idx = datasample(1:length(col_in_bin),numdesc);
+
     for i = 1:b
         col_in_bin = find(bin == i); % Find columns in the current bin
 
         if ~isempty(col_in_bin)
             numdesc_op = min(numdesc, length(col_in_bin));
             perm_idx = randperm(length(col_in_bin), numdesc_op);
-            % perm_idx = datasample(1:length(col_in_bin),numdesc);
+           
             selected_cols = col_in_bin(perm_idx); % Select random columns
             M_matbin = M(:, selected_cols);
             M_new_mat(:, i,pp) = median(M_matbin, 2);
         end
-        % colmat()
+        colmat()
     end
 end
 

@@ -27,8 +27,6 @@ function [M_new,M_new_mat] = ARC_binAndTransform_shuffcoarse(M, V, b,numdesc,npe
                 selected_cols = col_in_bin(perm_idx); % Select random columns
                 M_matbin = M(:, selected_cols);
 
-                
-
                 M_new_mat(:, i,pp) = mean(M_matbin, 2);
             end
         end

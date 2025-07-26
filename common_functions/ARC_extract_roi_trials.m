@@ -3,6 +3,7 @@ roiMaskFile = cfg.anatMasks{ri};
 roiMaskVol  = spm_read_vols(spm_vol(fullfile(subjDat.subjectDir,roiMaskFile)));
 roiMaskVol(isnan(roiMaskVol)) = 0;
 R.mask = logical(roiMaskVol);
+trialRS = load(fullfile(subjDat.subjectDir,'task_struct_trialwise.mat'));
 
 % ---------- single-trial betas ----------
 glmFile = fullfile(subjDat.subjectDir,cfg.anatNames{ri}, ...
@@ -12,4 +13,5 @@ R.betatrials = squeeze(glmData.modelmd);      % [vox x trial]
 R.behav      = subjDat.behav;                       % keep behavioural ratings
 R.group_vec = subjDat.group_vec; % Trial wise structure of which odor was delivered at each trial   
 R.si = si;
+R.trialstruct  = trialRS.set_run;
 end

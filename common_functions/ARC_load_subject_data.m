@@ -1,6 +1,7 @@
 function D = ARC_load_subject_data(sid,cfg)
 D.behav = load(cfg.behavFile,'behav');        % whole struct
 D.behav = D.behav.behav(sid);                 % single subject slice
+% D.subjectDir = fullfile(cfg.mainRoot,sprintf('ARC%02d',sid),'single');
 D.subjectDir = fullfile(cfg.mainRoot,sprintf('ARC%02d',sid),'single');
 onsets = load(fullfile(D.subjectDir,sprintf('conditions_NEMO%02d.mat',sid)),'onsets');
 D.onsets = onsets.onsets;

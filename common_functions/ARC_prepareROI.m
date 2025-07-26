@@ -20,23 +20,36 @@ end
 if cfg.doZscore, X = zscore(X,0,2); end
 
 % ---- voxel-population indices from RSA weights -------------------------
-if cfg.splithalf_ 
-    load(cfg.RSAfile,'results');
-    w_score_mat = results.w_score_matdist;
-    ws = w_score_mat{subjIdx,roiIdx};      
+if cfg.searchl
+    posIdx = [];
+    negIdx = [];
+    mutIdx  = [];
 else
-    load(cfg.RSAfile,'w_score_mat');
-    ws = w_score_mat{subjIdx,roiIdx};      
-    ws = squeeze(mean(ws,2));
-    
-end
+    if cfg.splithalf_
+        if cfg.prctile
+            % load(cfg.RSAfile,'prctile_mat');
+            ws = cfg.prctile_mat{subjIdx,roiIdx};
+        else
+            load(cfg.RSAfile,'results_cell');
+            ws_struct = results_cell{cfg.seed}.w_score_matdist;
+            ws = ws_struct {subjIdx,roiIdx};
+        end
+    else
+        load(cfg.RSAfile,'w_score_mat');
+        ws = w_score_mat{subjIdx,roiIdx};
+        ws = squeeze(mean(ws,2));
+
+    end
     % vox × 2 (val+, val- weights)
 
-thr = 0.075;                               % user-defined cutoff
-posIdx =  ws(:,1) > thr & ws(:,2) <  thr;  % val+ specific vox
-negIdx =  ws(:,2) > thr & ws(:,1) <  thr;  % val- specific vox
-mutIdx =  ws(:,1) > thr & ws(:,2) >  thr;  % mutually tuned vox
+    thr1 = cfg.thrs_1;
+    thr2 = cfg.thrs_2;
 
+    % user-defined cutoff
+    posIdx =  ws(:,1) > thr1 & abs(ws(:,2)) <  thr2;  % val+ specific vox
+    negIdx =  ws(:,2) > thr1 & abs(ws(:,1)) <  thr2;  % val- specific vox
+    mutIdx =  ws(:,1) > thr1 & ws(:,2) >  thr1;  % mutually tuned vox
+end
 % ---- behavioural labels per trial -------------------------------------
 labels    = discretize(behavVec,cfg.bins);
 neural    = X.';                           % trials × vox (transpose for libsvm)

@@ -10,8 +10,11 @@ binz = 7;
 binzc = 4;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
 
-anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
-anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
+% anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
+% anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
+
+anat_names = {'PC','AMY','OFC','VMPFC'};
+anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 
 nanat = length(anat_names);
 medianize_behav = true;
@@ -20,9 +23,9 @@ rangenormer = false;
 smoter = false;
 pca_maker = false;
 discretizer = true;
-switcher = 'Basic'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
+switcher = 'Domainpart'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
 popname = 'pos'; % 'pos' 'neg' or 'mut'
-savename = 'RSA_correct/Basic_extraROI';
+savename = 'RSA_correct/Domainpart_main_woneut';
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
 % load('C:\Data\NEMO\swampsunset.mat');
@@ -239,8 +242,14 @@ for s = [1 2 3] % Subject
                         [~,rsa_P1t(s,ii,1)] = ARC_r2t(mean( tempmat1),length(labels_val));
                         [~,rsa_P1t(s,ii,2)] = ARC_r2t( mean( tempmat2),length(labels_sal));
                     else
-                        [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_nested2_normed(neural_val, labels_val, 2,1);
-                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_nested2_normed(neural_val, labels_sal, 2,1);
+                        % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_nested2_normed(neural_val, labels_val, 2,1);
+                        % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_nested2_normed(neural_val, labels_sal, 2,1);
+                        % if and(ii==1, s==1)
+                        % 'test'
+                        % end
+                         [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_normed(neural_val, labels_val, 2,1);
+                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_normed(neural_val, labels_sal, 2,1);
+
                         % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = Classify_Permute_VS2_regress(neural_val, labels_val, 4);
                         % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = Classify_Permute_VS2_regress(neural_val, labels_sal, 4);
                     end
@@ -260,11 +269,11 @@ for s = [1 2 3] % Subject
                 dfs(s,ii,2)=length(labels_sal);
             case 'Domainpart'
                 % % % % labels_val_perm = labels_val(randperm(length(labels_val)));
-                neural_val_pos = neural_val(labels_val>=binzc,:);
-                neural_val_neg = neural_val(labels_val<=binzc,:);
+                neural_val_pos = neural_val(labels_val>binzc,:);
+                neural_val_neg = neural_val(labels_val<binzc,:);
 
-                labels_val_pos = labels_val(labels_val>=binzc,:);
-                labels_val_neg = labels_val(labels_val<=binzc,:);
+                labels_val_pos = labels_val(labels_val>binzc,:);
+                labels_val_neg = labels_val(labels_val<binzc,:);
 
                 if sz_ctrl
                     nperm = 100;
@@ -302,8 +311,16 @@ for s = [1 2 3] % Subject
                     else
                         % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = Classify_Permute_VS2_regress( neural_val_pos, labels_val_pos, 4);
                         % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = Classify_Permute_VS2_regress( neural_val_neg, labels_val_neg, 4);
-                        [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_nested2_normed(neural_val_pos, labels_val_pos, 2,1);
-                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_nested2_normed(neural_val_neg, labels_val_neg, 2,1);
+                        % 'test'
+                        %  if and(ii==1, s==1)
+                        % 'test'
+                        %  end
+
+                        [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_normed(neural_val_pos, labels_val_pos, 4,1);
+                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_normed(neural_val_neg, labels_val_neg, 4,1);
+                        % 
+                        % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_nested2_normed(neural_val_pos, labels_val_pos, 4,1);
+                        % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_nested2_normed(neural_val_neg, labels_val_neg, 4,1);
 
                         dfs(s,ii,1)=length(labels_val_neg);
                         dfs(s,ii,2)=length(labels_val_pos);
@@ -374,14 +391,25 @@ for s = [1 2 3] % Subject
                 dfs(s,ii,2)=length(labels_val_neg);
 
             case 'Crossdec'
+                labneg = selectLess4AndHalf4(labels_val);
 
-                neural_val_pos = neural_val(labels_val>binzc,:);
-                neural_val_neg = neural_val(labels_val<binzc,:);
 
-                labels_val_pos = labels_val(labels_val>binzc,:);
-                labels_val_neg = labels_val(labels_val<binzc,:);
-                [ rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_wrapper(neural_val_pos,labels_val_pos, neural_val_neg, labels_val_neg, 2,10);
-                [ rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_wrapper(neural_val_neg, labels_val_neg,neural_val_pos,labels_val_pos, 2,10);
+
+                % neural_val_pos = neural_val(labels_val>binzc,:);
+                % neural_val_neg = neural_val(labels_val<binzc,:);
+                % 
+                % labels_val_pos = labels_val(labels_val>binzc,:);
+                % labels_val_neg = labels_val(labels_val<binzc,:);
+
+
+                neural_val_pos = neural_val(~labneg ,:);
+                neural_val_neg = neural_val(labneg ,:);
+
+                labels_val_pos = labels_val(~labneg ,:);
+                labels_val_neg = labels_val(labneg ,:);
+
+                [ rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_wrapper(neural_val_pos,labels_val_pos, neural_val_neg, labels_val_neg, 4,1,false);
+                [ rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_wrapper(neural_val_neg, labels_val_neg,neural_val_pos,labels_val_pos, 4,1,false);
 
                 % % mdl = svmtrain(labels_val_pos, neural_val_pos,   '-s 3 -t 2 -c 1 -q');
                 % mdl = ARC_regress_nested_mdl(neural_val_pos, labels_val_pos, 2);
@@ -406,6 +434,7 @@ for s = [1 2 3] % Subject
                 load(ffile,'t_score_mat','thr_fdranat','w_score_mat')
                 assert(size(neural_val,2)==size(t_score_mat{s,ii},1))
                 thr = tinv(0.90,size(t_score_mat{s,ii},1));
+
                 % thr1 = thr_fdranat(s,1,ii);
                 % thr2 = thr_fdranat(s,2,ii);
 
@@ -414,8 +443,7 @@ for s = [1 2 3] % Subject
                 % thr = 1.65;
                 % pospop = and(t_score_mat{s,ii}(:,1)>thr1,t_score_mat{s,ii}(:,2)<thr);
                 % negpop = and(t_score_mat{s,ii}(:,2)>thr2,t_score_mat{s,ii}(:,1)<thr);
-                %
-
+                
                 thr = 0.075;
                 thr1 = 0.075;
                 thr2 = 0.075;
@@ -447,13 +475,12 @@ for s = [1 2 3] % Subject
                 [ rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_wrapper(neural_val_neg,labels_val_neg,neural_val_pos_cr,labels_val_pos, 2,1);
                 % %
                 % % Pospop
+                error('check pop dist') % This maybe incorrect
                 % [ rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_wrapper(neural_val_neg,labels_val_neg,neural_val_pos_cr,labels_val_pos, 2,1);
                 % [ rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_wrapper(neural_val_pos_cr,labels_val_pos,neural_val_neg,labels_val_neg, 2,1);
 
-
-
-                dfs(s,ii,1)=length(labels_val_pos);
-                dfs(s,ii,2)=length(labels_val_neg);
+                dfs(s,ii,1) = length(labels_val_pos);
+                dfs(s,ii,2) = length(labels_val_neg);
                 legender = {'Val--> Val+ in N-','Val+ -> Val- in N+'};
 
             otherwise
@@ -524,10 +551,12 @@ p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs);
 ARC_barplot_sig(rsa_P1,p_values_3dt)
 xticks(1:nanat)
 xticklabels(anat_names);
-% legend({'Val+','Val-'})
-legend(legender)
+ylim([-0.2 0.1])
+legend({'Val+ -> Val-','Val- -> Val+'})
+% legend(legender)
 savefig(fullfile(savepath,'ARC_decoding'))
 print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_decoding'),'.svg']) % svg
+% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_decoding'),'.svg']) % svg
 % p_values_3d2 = ARC_combinePValues3D(rsa_P1t, rsa_P1, dfs)
 
 % p_values_3dz = ARC_decoding_pvals_zsc(rsa_P1, dfs)

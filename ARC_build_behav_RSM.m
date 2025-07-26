@@ -1,4 +1,4 @@
-function [val1, val2, maskMat] = ARC_build_behav_RSM(cfg);
+function [val1, val2, maskMat,val_sc,sal_sc] = ARC_build_behav_RSM(cfg)
 
 binz = cfg.nBin;
 binzpart1 = cfg.binzPart1;
@@ -22,7 +22,7 @@ if cfg.runSqDist
     valn_mat = 1-abs(valn-valn').^2;
 end
 
-utl_mask1 = logical(blkdiag(zeros(binz-binzpart1),ones(binzpart1)));
+utl_mask1 = flipud(logical(blkdiag(zeros(binz-binzpart1),ones(binzpart1))));
 utl_mask2 = logical(triu(ones(length(val_mat)),1)); % All possible odors
 utl_mask = and(utl_mask1,utl_mask2);
 utl_mask_blk = flipud(utl_mask1);
@@ -31,9 +31,13 @@ utl_mask_blk( binzpart1 , binzpart1 )=false;
 if cfg.valenceSplit
     val1 = valp_mat;
     val2 = valn_mat;
-    maskMat = utl_mask2;
-else
-    val1 = valp_mat;
-    val2 = valn_mat;
     maskMat = utl_mask;
+else
+    val1 =val_mat;
+    val2 = sal_mat;
+    maskMat = utl_mask2;
+    if cfg.ignore_neut
+        maskMat(:,binzpart1) = false;
+        maskMat(binzpart1,:) = false;
+    end
 end

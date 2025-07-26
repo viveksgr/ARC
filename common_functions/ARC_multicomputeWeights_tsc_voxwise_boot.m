@@ -77,13 +77,14 @@ end
 
 t_corr = corr(w_scores(:,1), w_scores(:,2));
 t_corr_sig = ARC_r2t(t_corr, nvox);
-proportions = computeProportions(t_scores, tinv(0.975, nvox));
+% proportions = computeProportions(t_scores, tinv(0.975, nvox));
+proportions = computeProportions(t_scores, 0.3,0.075);
 end
 
-function proportions = computeProportions(t_scores, thr)
+function proportions = computeProportions(t_scores, thr,thr2)
     % Calculate conditions
-    col1Above = t_scores(:,1) > thr & t_scores(:,2) <= thr; % Col 1 above thr, Col 2 not
-    col2Above = t_scores(:,2) > thr & t_scores(:,1) <= thr; % Col 2 above thr, Col 1 not
+    col1Above = t_scores(:,1) > thr & t_scores(:,2) <= thr2; % Col 1 above thr, Col 2 not
+    col2Above = t_scores(:,2) > thr & t_scores(:,1) <= thr2; % Col 2 above thr, Col 1 not
     bothAbove = t_scores(:,1) > thr & t_scores(:,2) > thr;  % Both cols above thr
     
     % Calculate proportions
