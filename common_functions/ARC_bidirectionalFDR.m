@@ -1,4 +1,4 @@
-function [pct_sig_pos,  thr_pos, pct_sig_neg, thr_neg] = ARC_bidirectionalFDR(r, df, q)
+function [pct_sig_pos,  thr_pos, pct_sig_neg, thr_neg] = ARC_bidirectionalFDR(r, df, pvals_thr)
 % bidirectionalFDR  One‐sided FDR correction for bidirectional effects
 %
 %   [pct_sig_pos, pct_ns_pos, pct_sig_neg, pct_ns_neg] = ...
@@ -14,9 +14,9 @@ function [pct_sig_pos,  thr_pos, pct_sig_neg, thr_neg] = ARC_bidirectionalFDR(r,
 %   pct_ns_pos  - % of all voxels with r>0 that fail the positive‐tail FDR
 %   pct_sig_neg - % of all voxels with r<0 that pass the negative‐tail FDR
 %   pct_ns_neg  - % of all voxels with r<0 that fail the negative‐tail FDR
-
-    if nargin<3 || isempty(q), q = 0.05; end
-
+    
+    % if nargin<3 || isempty(q), q = 0.05; end
+    q = 0.05;
     %--- 1) Compute one‐sided p‐values for each tail
     t = r .* sqrt(df ./ (1 - r.^2));        % convert r to t
     p_pos = 1 - tcdf(t, df);                % P(r > 0)
@@ -27,8 +27,15 @@ function [pct_sig_pos,  thr_pos, pct_sig_neg, thr_neg] = ARC_bidirectionalFDR(r,
     neg_idx = (r < 0);
 
     %--- 3) Run BH‐FDR separately on each tail
-    thr_pos = computeBH( p_pos(pos_idx), q );
-    thr_neg = computeBH( p_neg(neg_idx), q );
+    if nargin<3
+        thr_pos = computeBH( p_pos(pos_idx), q );
+        thr_neg = computeBH( p_neg(neg_idx), q );
+    else
+        thr_pos = pvals_thr(1);
+        thr_neg = pvals_thr(2);
+    end
+    % thr_pos = 0.05;
+    % thr_neg = 0.05;
 
     %--- 4) Compute percentages (relative to *all* voxels)
     N = numel(r);

@@ -5,11 +5,13 @@
 
  % clear; clc;
 cfg = ARC_make_default_config();                % one struct with all toggles
+% cfg.seed = 2;
 results = ARC_run_RSA_full(cfg);                % do the work
 
 % % % disp('✓  RSA finished and saved');
 cfg = ARC_makeDecodingCfg('C:\Work\ARC\ARC');
 ARC_runDecoding(cfg);
+
 
 % %% Iterative RSAtic
 % clear; clc;
@@ -120,5 +122,6 @@ ARC_createplt(cfg_mut,results_wt_i,results_dfs_i)
 %% Cross-decoding searchlight
 rootDir = 'C:\Work\ARC\ARC';
 cfg_cross = ARC_makeDecodingCfg(rootDir);
-cfg_cross.saveDir      = fullfile(rootDir,'Decoding','test_crs');
+cfg_cross.saveDir      = fullfile(rootDir,'Decoding','cross_searchl_2_temp');
+cfg_cross.includeneut =false;
 ARC_runDecoding_searchl(cfg_cross)

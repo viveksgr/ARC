@@ -580,7 +580,11 @@ end
 mkdir(savepath)
 % savepath = pwd;
 rsa_copy = rsa_P1;
-p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs);
+
+
+
+
+= ARC_decoding_pvals(rsa_P1, dfs);
 % rsa_P1(vpop<10) = nan;
 ARC_barplot_sig(rsa_P1,p_values_3dt,true,false)
 xticks(1:nanat)

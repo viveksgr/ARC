@@ -5,6 +5,7 @@ function G = ARC_make_group_stats(wSub, tSub,cfg)
 nanat = length(cfg.anatNames);
 rsa_Pavg = zeros(nanat,2);
 rsa_P1wt = zeros(3,nanat,2);
+
 for ii=1:nanat
     vec = cat(2,wSub{:,ii});
     vec_dist = cat(3,tSub{:,ii});
@@ -18,11 +19,11 @@ end
 G.rsa_Pavg = rsa_Pavg;
 
 % Cross domain correlation
-ARC_barplot_sig(rsa_P1wt,rsa_Pavg,true,~cfg.valenceSplit)
+ARC_barplot_sig(rsa_P1wt,rsa_Pavg,true,~cfg.valenceSplit_nov)
 ylabel('RSA beta')
 xticks(1:nanat)
 xticklabels(cfg.anatNames)
-if cfg.valenceSplit
+if cfg.valenceSplit_nov
     legend({'Val+','Val-'})
 else
     legend({'Valence','Salience'})

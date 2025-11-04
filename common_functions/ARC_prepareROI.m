@@ -51,7 +51,11 @@ else
     mutIdx =  ws(:,1) > thr1 & ws(:,2) >  thr1;  % mutually tuned vox
 end
 % ---- behavioural labels per trial -------------------------------------
-labels    = discretize(behavVec,cfg.bins);
+if cfg.disc
+    labels    = discretize(behavVec,cfg.bins);
+else
+    labels = behavVec;
+end
 neural    = X.';                           % trials × vox (transpose for libsvm)
 
 end

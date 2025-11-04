@@ -4,18 +4,24 @@ function cfg = ARC_makeDecodingCfg(rootDir,seed)
 % Usage:
 %   cfg = ARC_makeDecodingCfg('C:\Work\ARC\ARC');
 
-% Freq toggles
-% cfg.samepop = false;
-% cfg.popChoice    = 'mut';          % 'pos','neg','mut'
-% ── save / load ─────────────────────────────────────────────────────────
-% cfg.saveDir      = fullfile(rootDir,'Decoding','100seed','crossmut2');
-
 if nargin<2
     seed = [];
 end
 
+% Freq toggles
+cfg.samepop = false;
+cfg.popChoice    = 'mut';          % 'pos','neg','mut'
+% ── save / load ─────────────────────────────────────────────────────────
+cfg.saveDir      = fullfile(rootDir,'Decoding','searchl_test');
+cfg.group_model = false;
+cfg.searchl = true;
 % cfg.splithalf_ = false;
 cfg.rget = 2;
+cfg.disc =false;
+% cfg.ig_neut = false;
+cfg.includeneut = true;
+
+cfg.sesswise = true;
 % cfg.RSAfile      = fullfile(rootDir,'results\mixedmaster100','wt_mats.mat'); % w_score_mat
 cfg.nfold = 4;
 cfg.prctile = true; 
@@ -25,8 +31,8 @@ cfg.thrs_2 = 0.5;
 % cfg.thrs_2 = 0.1;
 cfg.cross = true;
 cfg.mapper = true;
-cfg.ig_neut = true;
-cfg.searchl = false;
+
+
 % ── basic paths ──────────────────────────────────────────────────────────
 cfg.root         = rootDir;
 cfg.maskFile     = 'ARC3_anatgw.nii';
@@ -63,6 +69,5 @@ cfg.nbROIs       = numel(cfg.ROIs.names);
 cfg.splithalf_  = true;
 cfg.nested = false;
 cfg.verbose = true;
-
 
 end

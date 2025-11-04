@@ -7,6 +7,7 @@ if nargin < 4
     nperm = 1; % Default to 1 permutation if not specified
 end
 
+
 accumat = zeros(nperm,1);
 for pp = 1:nperm
     % Initialize variables

@@ -13,16 +13,20 @@ for ii = 1:nanat
 
     w_mat = vertcat(w_score_mat{:,ii});
     w_mat = reshape(w_mat,[],2);
-    histogram2( (w_mat(:,1)), (w_mat(:,2)),'DisplayStyle','tile','BinWidth',[range(w_mat(:,1))/40 range(w_mat(:,2))/40],'EdgeColor','none')
+    b1 = max(1,range(w_mat(:,1))/40);
+    b2 = max(1,range(w_mat(:,2))/40);
+    histogram2( (w_mat(:,1)), (w_mat(:,2)),'DisplayStyle','tile','BinWidth',[b1 b2],'EdgeColor','none')
 
     % histogram2( w_mat{ii}(:,1), w_mat{ii}(:,2),'DisplayStyle','tile','BinWidth',[0.05 0.05],'EdgeColor','none')
-    if cfg.valenceSplit
-    xlabel('Val+ RSA beta')
-    ylabel('Val- RSA beta')
-    else
-            xlabel('Valence beta')
-            ylabel('Salience RSA beta')
-    end
+    % if cfg.valenceSplit
+    % xlabel('Val+ RSA beta')
+    % ylabel('Val- RSA beta')
+        xlabel('Val+ LDA')
+    ylabel('Val- LDA')
+    % else
+    %         xlabel('Valence beta')
+    %         ylabel('Salience RSA beta')
+    % end
     xline(0)
     yline(0)
     % clim([0 6])
@@ -32,6 +36,7 @@ for ii = 1:nanat
     % yticks([-0.4 0.3 1])
     colorbar
     % clim(clims{ii})
+    title(cfg.anatNames{ii})
 end
 if cfg.verbose
 savefig(fullfile(cfg.saveRoot,'ARC_dens2'))

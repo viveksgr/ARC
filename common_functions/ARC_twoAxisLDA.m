@@ -39,7 +39,6 @@ deltaList = logspace(-3, 0, 20);
 voxelW      = [w1     w2];        % P × 2
 % LDAmodels   = [mdl1   mdl2];
 
-
 res.w_scores = voxelW;
 res.t_corr = fastcorr(voxelW (:,1),voxelW(:,2));
 end

@@ -41,7 +41,7 @@ valsep = false;
 num_cntrl = true; % Control analysis for bin size
 numctrl_bin = 1000;
 
-sz_ctrl = false; % Control analysis for ROI size
+sz_ctrl = true; % Control analysis for ROI size
 intens_reg = false; % Control analysis for Intensity
 sniff_ctrl = false;
 bias_correct = false;
@@ -52,7 +52,7 @@ run_voxwise = false;
 
 % root = 'C:\Work\ARC\Scripts';
 mainroot = 'C:\Work\ARC\ARC';
-modelname ='RSA_basic_temp';
+modelname ='RSA_basic_7bin_sz';
 savepath = fullfile(mainroot,'final_f_RSA',modelname) ;
 % v_ids = [1 1 1];
 % v_ids = [2 2 2];

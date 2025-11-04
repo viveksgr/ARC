@@ -51,8 +51,8 @@ for i = 1:nbars
             text(sig_x, sig_y, '**', 'HorizontalAlignment', 'center', 'Color', 'r')
         elseif rsa_Pp(j, i) < 0.05
             text(sig_x, sig_y, '*', 'HorizontalAlignment', 'center', 'Color', 'r')
-        elseif rsa_Pp(j, i) < 0.085
-            text(sig_x, sig_y, '(*)', 'HorizontalAlignment', 'center', 'Color', 'r')
+        % elseif rsa_Pp(j, i) < 0.085
+        %     text(sig_x, sig_y, '(*)', 'HorizontalAlignment', 'center', 'Color', 'r')
         end
     end
 end

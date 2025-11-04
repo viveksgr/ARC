@@ -13,5 +13,5 @@ R.betatrials = squeeze(glmData.modelmd);      % [vox x trial]
 R.behav      = subjDat.behav;                       % keep behavioural ratings
 R.group_vec = subjDat.group_vec; % Trial wise structure of which odor was delivered at each trial   
 R.si = si;
-R.trialstruct  = trialRS.set_run;
+% R.trialstruct  = trialRS.set_run;
 end

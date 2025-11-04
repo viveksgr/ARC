@@ -1,4 +1,4 @@
-function mask = selectLess4AndHalf4(vec)
+function mask = selectLess4AndHalf4(vec,thr)
 % SELECTLESS4ANDHALF4   Return a binary mask picking all vec<4 and half of vec==4
 %
 %   mask = selectLess4AndHalf4(vec) returns a logical vector the same size as
@@ -11,8 +11,12 @@ function mask = selectLess4AndHalf4(vec)
 %   mask = selectLess4AndHalf4(vec);
 %   sum(vec<4), sum(vec==4), sum(mask)
     % find <4 and ==4
-    idx_less4 = vec < 4;
-    idx_eq4   = find(vec == 4);
+    if nargin<2
+        thr = 4;
+    end
+
+    idx_less4 = vec <  thr;
+    idx_eq4   = find(vec ==  thr);
 
     % how many 4's to pick
     n4 = numel(idx_eq4);

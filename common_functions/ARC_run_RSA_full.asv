@@ -20,7 +20,6 @@ w_score_mat_dist = cell(nSub,nROI);
 w_mat = cell(nROI,1);
 
 for si = 1:nSub
-    if cfg.v_ids(si>0)
     sid = cfg.subjectList(si);
     fprintf('\nSubject %02d\n',sid);
 
@@ -28,17 +27,8 @@ for si = 1:nSub
     for ri = 1:nROI
         roiName = cfg.anatNames{ri};
         fprintf('  ROI: %s\n',roiName);
-        % 
-        % if ri==3
-        %     'beep'
-        % end
 
-        if cfg.sesswise
-             roiDat = ARC_extract_roi_trials_travg(subjDat,ri,cfg,si);      % mask+voxel list
-             % fprintf('Running sesswise')
-        else
-            roiDat = ARC_extract_roi_trials(subjDat,ri,cfg,si);      % mask+voxel list
-        end
+        roiDat = ARC_extract_roi_trials(subjDat,ri,cfg,si);      % mask+voxel list
        
           % if ri==3
           %       'error'
@@ -56,7 +46,6 @@ for si = 1:nSub
         w_mat{ri} = cat(1,w_mat{ri},res.w_scores);
         end
     end
-    end
 end
 
 % Save results
@@ -64,7 +53,7 @@ results.wSub = wSub;
 results.tSub = tSub;
 results.pSub = pSub;
 
-% w_score_mat_dist = cellfun(@(x) double(x.coarser), pSub, 'UniformOutput',false);
+w_score_mat_dist = cellfun(@(x) double(x.finer), pSub, 'UniformOutput',false);
 % C2 = arrayfun(@(j) vertcat(w_score_mat_dist{:,j}), 1:size(w_score_mat_dist,2), ...
 %               'UniformOutput', false);
 % w_score_mat_dist = C2;
