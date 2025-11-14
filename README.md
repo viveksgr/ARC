@@ -41,7 +41,7 @@ Runtime for the demo scripts varies by the analyses but most RSA analyses should
 To repeat the complete analyses using these scripts, acquire the complete raw [dataset](https://www.nature.com/articles/s41593-023-01414-4#data-availability) and perform suggested preprocessing.
 The following scripts should be executed in order after preprocessing:
 1. ARC_createsingletrials: PExtract voxelwise single trials responses using the GLM single package
-2. ARC_RSA_analyses: Perform representational similarity analysis for valence, salience, appetitive and aversive pleasantness. Also perform voxelwise RSA and make brain maps of voxelwise RSA.
+2. ARC_RSA_analyses: Perform representational similarity analysis for valence, salience, appetitive and aversive pleasantness. 
 3. ARC_decoding_analyses: Decoding analyses based on support vector machine to predict odor valence, salience, appetitive or aversive pleasantness.
 
 *Detailed documentation for all scripts are in progress*

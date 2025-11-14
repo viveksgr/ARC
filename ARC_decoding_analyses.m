@@ -2,7 +2,7 @@
 
 % Check fmasker
 tic
-root = 'C:\Work\ARC\ARC';
+root = 'D:\Work\ARC\ARC';
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
 fmasker = false;
@@ -34,7 +34,7 @@ discretizer = false;
 sesswise = false;
 switcher = 'Domainpart'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
 popname = 'pos'; % 'pos' 'neg' or 'mut'
-savename = 'final_f_decoding/Domainpart_int';
+savename = 'final_f_decoding/Domainpart_wt_ctrl2';
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
 % load('C:\Data\NEMO\swampsunset.mat');
@@ -44,8 +44,8 @@ z_scorer = false;
 nodor = 160;
 
 sz_ctrl = false;
-intens_reg = true;
-wt_adj = false;
+intens_reg = false;
+wt_adj = true;
 
 sess_l = repmat([0],1,2,3);
 dirs = {fullfile(root,'\ARC01\mediation');
@@ -70,11 +70,11 @@ kk = 1;
 if fmasker
     % ffile ='C:\Work\ARC\ARC\RSA\controls\main\ARC_RSA.mat';
     % ffile = 'C:\Work\ARC\ARC\RSA\Basic\ARC_RSA.mat';
-    ffile = 'C:\Work\ARC\ARC\RSA\valsep_corrected2\ARC_RSA.mat';
+    ffile = 'D:\Work\ARC\ARC\RSA\valsep_corrected2\ARC_RSA.mat';
 else
     % ffile = 'C:\Work\ARC\ARC\RSA\unmasked\valsep\ARC_RSA.mat';
     % ffile = 'C:\Work\ARC\ARC\RSA\unmasked\basic_med\ARC_RSA.mat';
-    ffile = 'C:\Work\ARC\ARC\results\basic_main_100\ARC_RSA.mat';
+    ffile = 'D:\Work\ARC\ARC\results\basic_main_100\ARC_RSA.mat';
 end
 
 
@@ -263,8 +263,11 @@ for s = [1 2 3] % Subject
                         nperm = 20;
                         tempmat1 = zeros(nperm,1);    tempmat2 = zeros(nperm,1);
                         for pp = 1:nperm
-                            idx_val = ARC_balanceClasses(labels_val, binz);
-                            idx_sal = ARC_balanceClasses(labels_sal, binz);
+
+                        [~,idx_val ] = datasample(labels_val,1000);
+                        [~,idx_sal] =datasample(labels_sal,1000);
+                            % idx_val = ARC_balanceClasses(labels_val, binz);
+                            % idx_sal = ARC_balanceClasses(labels_sal, binz);
                             tempmat1(pp) = ARC_regress_normed(neural_val(idx_val,:), labels_val(idx_val), 2,1);
                             tempmat2(pp) = ARC_regress_normed(neural_val(idx_sal,:), labels_sal(idx_sal), 2,1);
                         end
@@ -303,7 +306,7 @@ for s = [1 2 3] % Subject
                 if ~discretizer; binzc = 0; end
                 neural_val_pos = neural_val(labels_val>=binzc,:);
                 neural_val_neg = neural_val(labels_val<=binzc,:);
-                labels_val_pos = labels_val(labels_val>=binzc,:);
+                labels_val_pos = labels_val(labels_val>=binzc,:); b
                 labels_val_neg = labels_val(labels_val<=binzc,:);
 
                 if sz_ctrl
@@ -323,22 +326,35 @@ for s = [1 2 3] % Subject
                     dfs(s,ii,2)=length(labels_val_pos);
                 else
                     if wt_adj
-                        labels_val_pos = labels_val_pos-3;
-                        nperm = 20;
-                        tempmat1 = zeros(nperm,1);    tempmat2 = zeros(nperm,1);
-                        for pp = 1:nperm
-                            idx_valp = ARC_balanceClasses(labels_val_pos, length(unique(labels_val_pos)),200);
-                            idx_valn = ARC_balanceClasses(labels_val_neg, length(unique(labels_val_neg)),200);
-                            tempmat1(pp) = ARC_regress_normed(neural_val_pos(idx_valp,:), labels_val_pos(idx_valp), 2,1);
-                            tempmat2(pp) = ARC_regress_normed(neural_val_neg(idx_valn,:), labels_val_neg(idx_valn), 2,1);
-                        end
-                        rsa_P1(s,ii,1) = mean( tempmat1);
-                        rsa_P1(s,ii,2) = mean( tempmat2);
-                        [~,rsa_P1t(s,ii,1)] = ARC_r2t(mean( tempmat1),length(labels_val_pos));
-                        [~,rsa_P1t(s,ii,2)] = ARC_r2t( mean( tempmat2),length(labels_val_neg));
+                        % labels_val_pos = labels_val_pos-3;
+                        % nperm = 20;
+                        % tempmat1 = zeros(nperm,1);    tempmat2 = zeros(nperm,1);
+                        % for pp = 1:nperm
+                        %     idx_valp = ARC_balanceClasses(labels_val_pos, length(unique(labels_val_pos)),200);
+                        %     idx_valn = ARC_balanceClasses(labels_val_neg, length(unique(labels_val_neg)),200);
+                        %     tempmat1(pp) = ARC_regress_normed(neural_val_pos(idx_valp,:), labels_val_pos(idx_valp), 2,1);
+                        %     tempmat2(pp) = ARC_regress_normed(neural_val_neg(idx_valn,:), labels_val_neg(idx_valn), 2,1);
+                        % end
+                        % rsa_P1(s,ii,1) = mean( tempmat1);
+                        % rsa_P1(s,ii,2) = mean( tempmat2);
+                        % [~,rsa_P1t(s,ii,1)] = ARC_r2t(mean( tempmat1),length(labels_val_pos));
+                        % [~,rsa_P1t(s,ii,2)] = ARC_r2t( mean( tempmat2),length(labels_val_neg));
+                        % 
+                        % dfs(s,ii,1)=length(idx_valp);
+                        % dfs(s,ii,2)=length(idx_valn);
+
+                        [~,idx_valp] = datasample(labels_val_pos,1000);
+                        [~,idx_valn] =datasample(labels_val_neg,1000);
+                        % idx_valp = randperm(length(labels_val_pos));
+                        % idx_valn = randperm(length(labels_val_neg));
+                        [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_normed(neural_val_pos(idx_valp,:), labels_val_pos(idx_valp), 2,1);
+                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_normed(neural_val_neg(idx_valn,:), labels_val_neg(idx_valn), 2,1);
+                   
 
                         dfs(s,ii,1)=length(idx_valp);
                         dfs(s,ii,2)=length(idx_valn);
+
+
                     else
                         % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = Classify_Permute_VS2_regress( neural_val_pos, labels_val_pos, 4);
                         % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = Classify_Permute_VS2_regress( neural_val_neg, labels_val_neg, 4);
@@ -346,10 +362,16 @@ for s = [1 2 3] % Subject
                         %  if and(ii==1, s==1)
                         % 'test'
                         %  end
-
+                        % [~,idx_valp] = datasample(labels_val_pos,1000);
+                        % [~,idx_valn] =datasample(labels_val_neg,1000);
+                        % % idx_valp = randperm(length(labels_val_pos));
+                        % % idx_valn = randperm(length(labels_val_neg));
+                        % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_normed(neural_val_pos(idx_valp,:), labels_val_pos(idx_valp), 2,1);
+                        % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_normed(neural_val_neg(idx_valn,:), labels_val_neg(idx_valn), 2,1);
+                        % 
                         % 'dat'
-                        [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_normed(neural_val_pos, labels_val_pos, 4,1);
-                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_normed(neural_val_neg, labels_val_neg, 4,1);
+                        [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_normed(neural_val_pos, labels_val_pos, 2,1);
+                        [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_normed(neural_val_neg, labels_val_neg, 2,1);
                         % 
                         % [rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_nested2_normed(neural_val_pos, labels_val_pos, 4,1);
                         % [rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_nested2_normed(neural_val_neg, labels_val_neg, 4,1);
@@ -580,7 +602,7 @@ end
 mkdir(savepath)
 % savepath = pwd;
 rsa_copy = rsa_P1;
-p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs);
+s = ARC_decoding_pvals(rsa_P1, dfs);
 % rsa_P1(vpop<10) = nan;
 ARC_barplot_sig(rsa_P1,p_values_3dt,true,false)
 xticks(1:nanat)
@@ -602,7 +624,8 @@ toc
 
 if strcmp(switcher,'Crossdec')
     beta_mat  = tanh(mean(atanh(rsa_P1),3));
-    p_vals = max(p_values_3dt ,[],2);
+    % p_vals = max(p_values_3dt ,[],2);
+    p_values_3dt = ARC_decoding_pvals(  beta_mat, mean(dfs,3));
     plot_roi_bars_with_subjects(beta_mat, p_vals, ...
     'RoiLabels',anat_names, ...
     'YLabel','Accuracy (r)', ...
