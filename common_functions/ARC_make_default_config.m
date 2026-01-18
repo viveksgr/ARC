@@ -5,10 +5,13 @@ function cfg = ARC_make_default_config()
 cfg.sesswise = false;
 cfg.valenceSplit_nov = false;
 cfg.ignore_neut = false;
-cfg.v_ids = [0 17 17];
+cfg.v_ids = [2 2 2];
 
 cfg.splithalf_   = false;
-cfg.voxwiseshuff = false;
+cfg.voxwiseshuff = true; % Shuffle test on voxelwise RSA
+% cfg.runShuffle   = false;
+cfg.shufftest = false; % Shuffle test
+
 cfg.usepcm = false;
 cfg.runpcmcollapse = false;
 cfg.runvoxwise   = false;
@@ -19,9 +22,9 @@ cfg.sizeCtrl     = false;
 cfg.intensityReg = false;
 cfg.sniffCtrl    = false;
 cfg.zscoreRows   = true;
-cfg.runShuffle   = false;
+
 cfg.runSqDist    = false;
-cfg.shufftest = false;
+
 cfg.valenceSplit = false; % val+/val–
 cfg.numCtrlbin = 200;
 
@@ -29,8 +32,8 @@ cfg.plotlims = [-0.2 1];
 % cfg.seed = 1; % put cfg seed as 1-100
 
 % ---------- analysis basics ----------
-cfg.mainRoot   = 'C:\Work\ARC\ARC';
-cfg.modelName  = 'RSA_basic_edibility';
+cfg.mainRoot   = 'D:\Work\ARC\ARC';
+cfg.modelName  = 'RSA_basic_repeat';
 cfg.saveRoot   = fullfile(cfg.mainRoot,'final_f_RSA',cfg.modelName);
 
 cfg.subjectList = 1:3; % which subject IDs to analyse

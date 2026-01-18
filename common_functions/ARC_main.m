@@ -8,7 +8,7 @@ cfg = ARC_make_default_config();                % one struct with all toggles
 results = ARC_run_RSA_full(cfg);                % do the work
 
 % % % disp('✓  RSA finished and saved');
-cfg = ARC_makeDecodingCfg('C:\Work\ARC\ARC');
+cfg = ARC_makeDecodingCfg('D:\Work\ARC\ARC');
 ARC_runDecoding(cfg);
 
 % %% Iterative RSAtic

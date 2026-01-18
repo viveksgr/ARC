@@ -34,7 +34,7 @@ discretizer = false;
 sesswise = false;
 switcher = 'Domainpart'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
 popname = 'pos'; % 'pos' 'neg' or 'mut'
-savename = 'final_f_decoding/Domainpart_wt_ctrl2';
+savename = 'final_f_decoding/Domainpart-2';
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
 % load('C:\Data\NEMO\swampsunset.mat');
@@ -45,7 +45,7 @@ nodor = 160;
 
 sz_ctrl = false;
 intens_reg = false;
-wt_adj = true;
+wt_adj = false;
 
 sess_l = repmat([0],1,2,3);
 dirs = {fullfile(root,'\ARC01\mediation');
@@ -174,7 +174,9 @@ for s = [1 2 3] % Subject
              modelmd = out.X(keep, :);
             sum_vox(ii) = sum(keep);
         else
-        modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+        % modelmd_ = load(fullfile(anatdir,'sesswise',anat_names{ii},'TR_01','TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+         modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+      
         modelmd = squeeze(modelmd_.modelmd);
         noisepool = modelmd_.noisepool;
         end
@@ -306,7 +308,7 @@ for s = [1 2 3] % Subject
                 if ~discretizer; binzc = 0; end
                 neural_val_pos = neural_val(labels_val>=binzc,:);
                 neural_val_neg = neural_val(labels_val<=binzc,:);
-                labels_val_pos = labels_val(labels_val>=binzc,:); b
+                labels_val_pos = labels_val(labels_val>=binzc,:); 
                 labels_val_neg = labels_val(labels_val<=binzc,:);
 
                 if sz_ctrl
@@ -602,7 +604,7 @@ end
 mkdir(savepath)
 % savepath = pwd;
 rsa_copy = rsa_P1;
-s = ARC_decoding_pvals(rsa_P1, dfs);
+p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs);
 % rsa_P1(vpop<10) = nan;
 ARC_barplot_sig(rsa_P1,p_values_3dt,true,false)
 xticks(1:nanat)

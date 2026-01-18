@@ -2,15 +2,20 @@
 
 %% General settings
 linux_config = false;
-s = 1;
-nvol = 856; % 856 for S1, 876 for S2, S3;
+s = 3;
+nvol = 876; % 856 for S1, 876 for S2, S3;
 anat_mask = 'ARC3_anatgw.nii';
-mname = 'wm';
-anat_name = {'wm'};
-anat_area = {'rwm_main.nii'};
+mname = 'sesswise';
+% anat_name = {'PC','AMY','OFC','VMPFC'};
+% anat_area = {'rwPC.nii'};
+% anat_area = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
+anat_name = {'PC'};
+% anat_area = {'rwPC.nii'};
+anat_area = {'rwPC.nii'};
 
-sess_i = 1;
-sess_f = 3;
+
+sess_i = 2;
+sess_f = 4;
 TRdur  = 0;
 set_i = 1;
 set_f = 4;
@@ -40,12 +45,15 @@ if linux_config
     end
     datapath = fullfile('/projects/p31178/Data/NEMO',sprintf('NEMO_%02d',s),'/imaging/nii');
 else
-    addpath('C:\Work\Tools\GLMsingle-main\matlab')
-    addpath('C:\Work\Tools\fracridge-master\fracridge-master\matlab')
-    addpath('C:\Work\Tools\\GLMsingle-main\matlab\utilities')
-    statpath = fullfile('C:\Work\ARC\ARC',sprintf('ARC%02d',s),'single');
+    addpath('D:\Work\Tools\GLMsingle-main\matlab')
+    addpath('D:\Work\Tools\fracridge-master\fracridge-master\matlab')
+    addpath('D:\Work\Tools\\GLMsingle-main\matlab\utilities')
+    statpath = fullfile('D:\Work\ARC\ARC',sprintf('ARC%02d',s),'single');
     maskpaths = statpath;
-    datapath = fullfile('C:\Work\NEMO Extended\Imaging\',sprintf('NEMO_%02d',s),'\nii');
+     if s==3
+        s=4;
+    end
+    datapath = fullfile('D:\Work\NEMO Extended\Imaging\',sprintf('NEMO_%02d',s),'imaging\nii');
 end
 
 % Load files
@@ -63,7 +71,7 @@ for set_ = set_i: set_f
             if s==1
                 ns = dir(fullfile(path_,sprintf('nusiance_regresssors_NEMO_%02d_set_%02d_sess_%02d_run_%02d.txt',s,set_,sess_,run_)));
             else
-                ns = dir(fullfile(path_,sprintf('nusiance_regresssors_NEMO%02d_set_%02d_sess_%02d_run_%02d.txt',s,set_,sess_,run_)));
+                ns = dir(fullfile(path_,sprintf('nuisance_regresssors_NEMO%02d_set_%02d_sess_%02d_run_%02d.txt',s,set_,sess_,run_)));
             end
             noise_files{rr} =  load(fullfile(path_,ns(1).name));
             for i=1:nvol
@@ -79,8 +87,23 @@ filename = fullfile(statpath, 'nuisance*.txt');
 n = dir(filename);
 mp = cat(1,noise_files{:});
 % mp = load(fullfile(statpath, n(1).name));
-% mp(:,35:end)=[];
+mp(:,35:end)=[];
 tic
+
+% Session indicator
+sessionindicator = zeros(1, nruns_T);
+rr = 0;
+for set_ = set_i:set_f
+    for sess_ = sess_i:sess_f
+        for run_ = nruns{set_}
+            rr = rr + 1;
+            sessionindicator(rr) = sess_;   % <-- visit ID for this run
+        end
+    end
+end
+opt.sessionindicator = sessionindicator;
+
+
 for aa = 1:length(anat_name)
     % Gray matter masks
     anatmask = (spm_read_vols(spm_vol(fullfile(maskpaths, anat_mask))));

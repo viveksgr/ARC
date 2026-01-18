@@ -12,7 +12,7 @@ if cfg.splithalf_
     trial_id_mat = load(cfg.histfile);
     cfg.odor_select = trial_id_mat.idxmat(:,cfg.seed);
     trial_inc = ismember(roiDat.group_vec,cfg.odor_select);
-  else
+else
     trial_inc = ismember(roiDat.group_vec,roiDat.group_vec);
 end
 
@@ -118,10 +118,10 @@ else
 end
 res.df = sum(sel);
 
-% if cfg.voxwiseshuff
-%     res_shuff = ARC_voxwise(val1, val2, modelmd_binned_shuff ,cfg);
-%     res.res_shuff = res_shuff;
-% end
+if cfg.voxwiseshuff
+    res_shuff = ARC_voxwise(val1, val2, modelmd_binned_shuff ,cfg);
+    res.res_shuff = res_shuff;
+end
 
 if cfg.plsregress
     X = roiDat.betatrials(sel,trial_inc)';

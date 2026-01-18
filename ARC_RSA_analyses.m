@@ -51,16 +51,16 @@ bias_correct = false;
 seq = false; % Regressout valp valn
 run_shuff = false;
 run_sqdist = false;
-run_voxwise = false;
+run_voxwise = true;
 
 % root = 'C:\Work\ARC\Scripts';
 mainroot = 'D:\Work\ARC\ARC';
-modelname ='RSA_basic_warm';
+modelname ='RSA_basic_st_confirm';
 savepath = fullfile(mainroot,'final_f_RSA',modelname) ;
 % v_ids = [1 1 1];
 % v_ids = [0 17 17];
-% v_ids = [14 13 13]; % Warm
-v_ids = [2 2 2];
+v_ids = [2 2 2]; % Warm
+% v_ids = [2 2 2];
 
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
@@ -71,11 +71,11 @@ if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 
 % anat_names = {'PC','AMY','OFC','VMPFC','Insula','Hipp','DLPFC','A1','wm'};
 % anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii','rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 
-% anat_names = {'PC','AMY','OFC','VMPFC'};
-% anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
+anat_names = {'PirC','AMY','OFC','VMPFC'};
+anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 
-anat_names = {'Insula','Hipp','A1','wm'};
-anat_masks = {'rwinsula.nii','rwHipp.nii','rwAud.nii','rwm_main.nii'};
+% anat_names = {'Insula','Hipp','A1','wm'};
+% anat_masks = {'rwinsula.nii','rwHipp.nii','rwAud.nii','rwm_main.nii'};
 nanat = length(anat_names);
 
 single_n = false; % Noisepool from GLM single
@@ -124,6 +124,7 @@ for s = [1 2 3] % Subject
 
         % Construction of median split
         behav_ratings = behav.behav(s).ratings(:,v_id);
+          % behav_ratings = behav.behav(s).ratings(:,v_id)-behav.behav(s).ratings(:,10);
 
         % fprintf('Shuffled ratings in progress')
         % behav_ratings = behav_ratings(randperm(length(behav_ratings)));
@@ -205,8 +206,9 @@ for s = [1 2 3] % Subject
             fprintf('area:%02d\n',ii)
 
             if ~demomode % Extract raw single trial responses (not functional in the demo version)
-                modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
-                % modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPEB_FITHRF.mat'),'modelmd','noisepool');
+                modelmd_ = load(fullfile(anatdir,'sesswise',anat_names{ii},'TR_01','TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+                % modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+              % modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPEB_FITHRF.mat'),'modelmd','noisepool');
 
                 modelmd = squeeze(modelmd_.modelmd);
 
@@ -642,7 +644,7 @@ clims = {[0 20],[0 25],[0 200],[0 100]};
 pvals= zeros(4,2);
 for ii = 1:nanat
     kk = ii;
-    subplot(3,nanat,kk)
+    subplot(1,nanat,kk)
     hold on
     % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
     cat1 = vertcat(w_score_mat{:,ii});
@@ -661,19 +663,19 @@ for ii = 1:nanat
     colorbar
     xline(50)
     yline(50)
-    clim(clims{ii})
+    % clim(clims{ii})
 
-    kk = ii+nanat;
-    subplot(3,nanat,kk)
-    histogram(mat3(:,1))
-    xlabel('Val+ RSA percentile')
-    ylabel('Freq.')
-
-    kk = ii+2*nanat;
-    subplot(3,nanat,kk)
-    histogram(mat3(:,2))
-    xlabel('Val- RSA percentile')
-    ylabel('Freq.')
+    % kk = ii+nanat;
+    % subplot(3,nanat,kk)
+    % histogram(mat3(:,1))
+    % xlabel('Val+ RSA percentile')
+    % ylabel('Freq.')
+    % 
+    % kk = ii+2*nanat;
+    % subplot(3,nanat,kk)
+    % histogram(mat3(:,2))
+    % xlabel('Val- RSA percentile')
+    % ylabel('Freq.')
 
 end
 

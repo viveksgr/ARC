@@ -11,6 +11,9 @@ MATLAB Version: R2023B
 ### Dependencies:
 1. [SPM12](https://www.fil.ion.ucl.ac.uk/spm/software/spm12/)
 2. [GLMSingle](https://github.com/cvnlab/GLMsingle)
+3. [LibSVM](https://www.csie.ntu.edu.tw/~cjlin/libsvm/)
+
+For control analyses involving sniffs, breathmetrics toolbox was used but is not essential for reproducing key results.
 
 The code was tested on a machine with the following recommended specifications:
 RAM: 64GB; processor: AMD Ryzen Threadripper PRO 4.00 GHz or higher;
