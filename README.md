@@ -33,6 +33,7 @@ The installation should take approximately a few minutes on a standard desktop c
 ## 3. Demo
 Demonstration to run representational similarity analyses are provided in the examples folder. The output should be similar to corresponding analyses in Sagar et. al., 2024 "Separable and integrated pleasantness coding for appetitive and aversive odors across olfactory and ventral prefrontal cortices" (In preparation)
 Runtime for the demo scripts varies by the analyses but most RSA analyses should be executable within an hour. 
+NOTE: Demo is only for illustration purposes only. 
 
 ### Instructions to Run on Demo Data
 1. Clone the repository and add all dependencies to filepath

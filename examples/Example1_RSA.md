@@ -10,6 +10,6 @@ It should produce the following RSA results in repository>results>modelname
 Results may very slightly differ because of stochasticity and noise.
 1. ARC_RSAwt.png: Beta weights of RSA coefficients of valence and salience
 2. imagescr.png: Representational similarity matrices for all ROIs and subjects
-3. voxprop.png: Fraction of voxels tuned to appetitive or aversive only pleasantness
-4. voxwise_similarity.png: Negative or null correlation between RSA coefficients for the pleasantness of appetitive and aversive odors, across all voxels in different regions 
-5. ARC_dens.png: . Distribution of voxel-wise RSA coefficients for the pleasantness of appetitive and aversive odors. 
+
+NOTE: p values may be imprecise because of limited number of iterations in the permutation test.
+For actual results, please run the analysis with nshuff = 1000 and demomode set to false. 

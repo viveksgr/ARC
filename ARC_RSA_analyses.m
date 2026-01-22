@@ -39,28 +39,27 @@
 % rmpath('C:\Work\mind\toolboxes\CanlabCore\CanlabCore\External\spider\basic\@normalize\normalize.m')
 % C:\Work\mind\toolboxes\CanlabCore\CanlabCore\External\spider\basic\@normalize\normalize.m  
 
-demomode = false; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
-valsep = false;
-num_cntrl = true; % Control analysis for bin size
+demomode = true; % Current demo is only for valsep, num_cntrl, sz_cntrl, intens_reg = false;
+mainroot = 'D:\Work\ARC\Scripts\';
+% mainroot = 'D:\Work\ARC\ARC\';
+
+valsep = false; % Toggle RSA for basic RSA or partitioning for appetitive or aversive domains (def = false)
+num_cntrl = true; % Control analysis for bin size; Always on - controls for unequal bins
 numctrl_bin = 200;
 
 sz_ctrl = false; % Control analysis for ROI size
 intens_reg = false; % Control analysis for Intensity
-sniff_ctrl = false;
-bias_correct = false;
+sniff_ctrl = false; % Control analysis for Sniffs
+bias_correct = false; 
 seq = false; % Regressout valp valn
 run_shuff = false;
 run_sqdist = false;
-run_voxwise = true;
+run_voxwise = false; % Run voxelwise RSA
 
 % root = 'C:\Work\ARC\Scripts';
-mainroot = 'D:\Work\ARC\ARC';
-modelname ='RSA_basic_st_confirm';
-savepath = fullfile(mainroot,'final_f_RSA',modelname) ;
-% v_ids = [1 1 1];
-% v_ids = [0 17 17];
-v_ids = [2 2 2]; % Warm
-% v_ids = [2 2 2];
+modelname ='results_new';
+savepath = fullfile(mainroot,'examples',modelname) ;
+v_ids = [2 2 2]; % Pleasantness = 2; intensity = 1; 
 
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
@@ -84,7 +83,8 @@ zscorer = true; % Normalization
 noblock = false;
 
 nodor = 160;
-nshuff = 1000;
+nshuff =50;
+
 behav = load(fullfile(mainroot,'supporting_files','NEMO_perceptual.mat'));
 if sniff_ctrl; load(fullfile(mainroot,'supporting_files','sniff_corr_ctrl_correct.mat')); end
 
@@ -107,6 +107,7 @@ w_mat = cell(nanat,1);
 thr_fdr = zeros(3,2);
 thr_fdranat = zeros(3,2,nanat);
 
+if demomode; fprintf('Running demo with 50 permutations: p values are not precise\n'); end
 % Figure across subjects
 figure1 = figure('OuterPosition',[297 183 1209 737]);
 hold on
@@ -120,7 +121,10 @@ for s = [1 2 3] % Subject
     else
 
         anatdir = fullfile(mainroot,sprintf('ARC%02d',s),'single');
-        if demomode;  anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s)); load(fullfile(mainroot,'supporting_files','modelbinned_mat.mat')); end
+        if demomode;  nshuff =50; anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s));...
+            load(fullfile(mainroot,'supporting_files','modelbinned_mat_shuff.mat'));...    
+            load(fullfile(mainroot,'supporting_files','modelbinned_mat.mat')); 
+        end
 
         % Construction of median split
         behav_ratings = behav.behav(s).ratings(:,v_id);
@@ -244,10 +248,19 @@ for s = [1 2 3] % Subject
             else
                 % Numerical control
                 % 'Run this...'
-                [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, numctrl_bin);
-                % modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse_old(modelmd_binned);
-                [~,modelmd_binned_shuff] = ARC_binAndTransform_shuffcoarse(modelmd2, behav_ratings_, binz, numctrl_bin,nshuff);
-                modelmd_binned_shuff = permute(modelmd_binned_shuff,[3 1 2]);
+                if ~demomode
+                    [modelmd_binned,modelmd_binned_mat] = ARC_binAndTransform_numctrl(modelmd2, behav_ratings_, binz, numctrl_bin,nshuff);
+                    % modelmd_binned_shuff = ARC_binAndTransform_shuffcoarse_old(modelmd_binned);
+                    [~,modelmd_binned_shuff] = ARC_binAndTransform_shuffcoarse(modelmd2, behav_ratings_, binz, numctrl_bin,nshuff);
+                    modelmd_binned_shuff = permute(modelmd_binned_shuff,[3 1 2]);
+                    modelbinned_mat{s,ii} = modelmd_binned;
+                    modelbinned_mat_dat{s,ii} = modelmd_binned_mat;
+                    modelbinned_mat_shuff{s,ii} = modelmd_binned_shuff;
+                else
+                    modelmd_binned = modelbinned_mat{s,ii};
+                    modelmd_binned_mat = modelbinned_mat_dat{s,ii};
+                    modelmd_binned_shuff = modelbinned_mat_shuff{s,ii};
+                end
             end
 
             if zscorer
@@ -547,75 +560,11 @@ else
     legend({'Valence','Salience'})
 end
 savefig(fullfile(savepath,'ARC_RSAwt'))
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
+% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(savepath,'ARC_RSAwt'),'-dpng')
-
-% RSA correlation domains
-figure()
-hold on
-bar(1:nanat,nanmean(rsa_Pcorr))
-errorbar(1:nanat,nanmean(rsa_Pcorr),nanstd(rsa_Pcorr)/3,'.')
-c_s = {'r','g','b'}; % Data dots for subjects
-for jj = 1:3 % For bars for perceptual, chemical and combinations
-    plot(1:nanat,rsa_Pcorr(jj,:),c_s{jj})
-end
-xticks(1:nanat)
-xticklabels(anat_names);
-ylabel('t score of correlation')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxwise_similarity'),'.svg']) % svg
-savefig(fullfile(savepath,'voxwise_similarity'))
-print(fullfile(savepath,'voxwise_similarity'),'-dpng')
-
-% RSA sig. voxels
-ARC_barplot(rsa_prop)
-xticks(1:nanat)
-xticklabels(anat_names);
-ylabel('Fraction voxels')
-legend({'only Val+', 'only Val-', 'both'})
-savefig(fullfile(savepath,'voxprop'))
-print(fullfile(savepath,'voxprop'),'-dpng')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'voxprop'),'.svg']) % svg
-
-
-% Scatter density
-figure('Position', [0.5 0.5 1420 240])
-% clims = {[0 5000],[0 6000],[0 60000],[0 30000]};
-clims = {[0 15],[0 20],[0 160],[0 80]};
-hold on
-kk = 0;
-for ii = 1:nanat
-    kk = kk+1;
-    subplot(1,nanat,kk)
-    hold on
-    % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
-    % histogram2(w_mat{ii}(:,1),w_mat{ii}(:,2),'DisplayStyle','tile','BinWidth',[0.05 0.05],'EdgeColor','none')
-
-    w_mat = vertcat(w_score_mat{:,ii});
-
-    % w_mat = reshape(w_mat,[],2);
-    w_mat = squeeze(mean(w_mat,2));
-    % vec = [-1:0.05:1];
-    % vec(mode(discretize(w_mat, vec)))
-    histogram2( w_mat(:,1), w_mat(:,2),'DisplayStyle','tile','BinWidth',[0.05 0.05],'EdgeColor','none')
-
-
-    xlabel('Val+ RSA beta')
-    ylabel('Val- RSA beta')
-    xline(0)
-    yline(0)
-    % clim([0 6])
-    xlim([-0.4 1])
-    xticks([-0.4 0.3 1])
-    ylim([-0.4 1])
-    yticks([-0.4 0.3 1])
-    colorbar
-    % clim(clims{ii})
-end
-savefig(fullfile(savepath,'ARC_dens3'))
-print(fullfile(savepath,'ARC_dens3'),'-dpng')
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_dens3'),'.svg']) % svg
+if demomode; fprintf('Ran demo with 50 permutations: p values are not precise\n'); end
 save(fullfile(savepath,'ARC_wts'),'w_score_mat')
-SFP_clearLargeVariables
+% SFP_clearLargeVariables
 save(fullfile(savepath,'ARC_RSA'))
 
 
@@ -635,88 +584,88 @@ save(fullfile(savepath,'ARC_RSA'))
 % yticks([-0.4 0.3 1])
 
 
-%% Fig percentiles
-% load shuff_mean manually as w_score_mat2 and mainmat as w_score_mat
-figure('Position', [0.5 0.5 1420 240])
-hold on
-kk = 0;
-clims = {[0 20],[0 25],[0 200],[0 100]};
-pvals= zeros(4,2);
-for ii = 1:nanat
-    kk = ii;
-    subplot(1,nanat,kk)
-    hold on
-    % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
-    cat1 = vertcat(w_score_mat{:,ii});
-    cat2 = vertcat(w_score_mat2{:,ii});
-    mat3 = ARC_inversePercentiles( cat1, cat2 ).*100;
-    pvals(ii,1) = signrank( mat3(:,1), 0.1, 'tail', 'right');
-    pvals(ii,2) = signrank( mat3(:,2), 0.1, 'tail', 'right');
-
-    [~ ,pvals(ii,1)] =jbtest( mat3(:,1));
-    [~,pvals(ii,2)] = jbtest( mat3(:,2));
-
-
-    histogram2( mat3(:,1), mat3(:,2),'DisplayStyle','tile','BinWidth',[5 5],'EdgeColor','none')
-    xlabel('Val+ RSA percentile')
-    ylabel('Val- RSA percentile')
-    colorbar
-    xline(50)
-    yline(50)
-    % clim(clims{ii})
-
-    % kk = ii+nanat;
-    % subplot(3,nanat,kk)
-    % histogram(mat3(:,1))
-    % xlabel('Val+ RSA percentile')
-    % ylabel('Freq.')
-    % 
-    % kk = ii+2*nanat;
-    % subplot(3,nanat,kk)
-    % histogram(mat3(:,2))
-    % xlabel('Val- RSA percentile')
-    % ylabel('Freq.')
-
-end
-
-%% Percentile scores
-% prctile_mat = cell(3,4);
-% for ss = 1:3
+% %% Fig percentiles
+% % load shuff_mean manually as w_score_mat2 and mainmat as w_score_mat
+% figure('Position', [0.5 0.5 1420 240])
+% hold on
+% kk = 0;
+% clims = {[0 20],[0 25],[0 200],[0 100]};
+% pvals= zeros(4,2);
 % for ii = 1:nanat
-%
+%     kk = ii;
+%     subplot(1,nanat,kk)
+%     hold on
 %     % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
-%     cat1 = (w_score_mat{ss,ii});
-%     cat2 = (w_score_mat2{ss,ii});
-%     prctile_mat{ss,ii} = ARC_inversePercentiles( cat1, cat2 ).*100;
-%
+%     cat1 = vertcat(w_score_mat{:,ii});
+%     cat2 = vertcat(w_score_mat2{:,ii});
+%     mat3 = ARC_inversePercentiles( cat1, cat2 ).*100;
+%     pvals(ii,1) = signrank( mat3(:,1), 0.1, 'tail', 'right');
+%     pvals(ii,2) = signrank( mat3(:,2), 0.1, 'tail', 'right');
+% 
+%     [~ ,pvals(ii,1)] =jbtest( mat3(:,1));
+%     [~,pvals(ii,2)] = jbtest( mat3(:,2));
+% 
+% 
+%     histogram2( mat3(:,1), mat3(:,2),'DisplayStyle','tile','BinWidth',[5 5],'EdgeColor','none')
+%     xlabel('Val+ RSA percentile')
+%     ylabel('Val- RSA percentile')
+%     colorbar
+%     xline(50)
+%     yline(50)
+%     % clim(clims{ii})
+% 
+%     % kk = ii+nanat;
+%     % subplot(3,nanat,kk)
+%     % histogram(mat3(:,1))
+%     % xlabel('Val+ RSA percentile')
+%     % ylabel('Freq.')
+%     % 
+%     % kk = ii+2*nanat;
+%     % subplot(3,nanat,kk)
+%     % histogram(mat3(:,2))
+%     % xlabel('Val- RSA percentile')
+%     % ylabel('Freq.')
+% 
 % end
+% 
+% %% Percentile scores
+% % prctile_mat = cell(3,4);
+% % for ss = 1:3
+% % for ii = 1:nanat
+% %
+% %     % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
+% %     cat1 = (w_score_mat{ss,ii});
+% %     cat2 = (w_score_mat2{ss,ii});
+% %     prctile_mat{ss,ii} = ARC_inversePercentiles( cat1, cat2 ).*100;
+% %
+% % end
+% % end
+% pvals= zeros(4,2);
+% prctile_mat = cell(8,1);
+% for ii = 1:nanat
+%     % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
+%     cat1 = vertcat(w_score_mat{:,ii});
+%     cat2 = vertcat(w_score_mat2{:,ii});
+%     tmp = ARC_inversePercentiles( cat1, cat2 ).*100;
+%     prctile_mat{2*ii-1}= tmp(:,1);
+%     prctile_mat{2*ii}= tmp(:,2);
+% 
+%     % pvals(ii,1) = signrank( tmp(:,1), 50, 'tail', 'right');
+%     % pvals(ii,2) = signrank(tmp(:,2), 50, 'tail', 'right');
+% 
+%     % cat1_distp = cat1(:,:,1);
+%     % cat2_distp = cat2(:,:,1);
+%     % cat1_distn = cat1(:,:,2);
+%     % cat2_distn = cat2(:,:,2);
+%     % pvals(ii,1) = ranksum(cat1_distp(:),cat2_distp(:));
+%     % pvals(ii,2) = ranksum(cat1_distn(:),cat2_distn(:));
+% 
+%     % [~ ,pvals(ii,1)] =jbtest( tmp(:,1));
+%     % [~,pvals(ii,2)] = jbtest( tmp(:,2));
+% 
+%     [pvals(ii,1)] = signtest( (tmp(:,1)-50),0,'Tail','both');
+%     [pvals(ii,2)] = signtest( (tmp(:,2)-50),0,'Tail','both');
 % end
-pvals= zeros(4,2);
-prctile_mat = cell(8,1);
-for ii = 1:nanat
-    % ARC_scatterDensity(w_mat{ii}(:,1),w_mat{ii}(:,2))
-    cat1 = vertcat(w_score_mat{:,ii});
-    cat2 = vertcat(w_score_mat2{:,ii});
-    tmp = ARC_inversePercentiles( cat1, cat2 ).*100;
-    prctile_mat{2*ii-1}= tmp(:,1);
-    prctile_mat{2*ii}= tmp(:,2);
-
-    % pvals(ii,1) = signrank( tmp(:,1), 50, 'tail', 'right');
-    % pvals(ii,2) = signrank(tmp(:,2), 50, 'tail', 'right');
-
-    % cat1_distp = cat1(:,:,1);
-    % cat2_distp = cat2(:,:,1);
-    % cat1_distn = cat1(:,:,2);
-    % cat2_distn = cat2(:,:,2);
-    % pvals(ii,1) = ranksum(cat1_distp(:),cat2_distp(:));
-    % pvals(ii,2) = ranksum(cat1_distn(:),cat2_distn(:));
-
-    % [~ ,pvals(ii,1)] =jbtest( tmp(:,1));
-    % [~,pvals(ii,2)] = jbtest( tmp(:,2));
-
-    [pvals(ii,1)] = signtest( (tmp(:,1)-50),0,'Tail','both');
-    [pvals(ii,2)] = signtest( (tmp(:,2)-50),0,'Tail','both');
-end
 
 
 %% Behavioral plots
