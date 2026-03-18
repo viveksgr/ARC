@@ -57,7 +57,7 @@ run_sqdist = false;
 run_voxwise = false; % Run voxelwise RSA
 
 % root = 'C:\Work\ARC\Scripts';
-modelname ='results_new';
+modelname ='RSA_results';
 savepath = fullfile(mainroot,'examples',modelname) ;
 v_ids = [2 2 2]; % Pleasantness = 2; intensity = 1; 
 
@@ -523,7 +523,7 @@ for s = [1 2 3] % Subject
     end
 end
 savepath
-savefig(fullfile(savepath,'imagescr'))
+% savefig(fullfile(savepath,'imagescr'))
 print(fullfile(savepath,'imagescr'),'-dpng')
 
 
@@ -559,11 +559,11 @@ if valsep
 else
     legend({'Valence','Salience'})
 end
-savefig(fullfile(savepath,'ARC_RSAwt'))
+% savefig(fullfile(savepath,'ARC_RSAwt'))
 % print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_RSAwt'),'.svg']) % svg
 print(fullfile(savepath,'ARC_RSAwt'),'-dpng')
 if demomode; fprintf('Ran demo with 50 permutations: p values are not precise\n'); end
-save(fullfile(savepath,'ARC_wts'),'w_score_mat')
+% save(fullfile(savepath,'ARC_wts'),'w_score_mat')
 % SFP_clearLargeVariables
 save(fullfile(savepath,'ARC_RSA'))
 

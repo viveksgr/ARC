@@ -9,14 +9,13 @@ fmasker = false;
 binz = 7;
 binzc = 4;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
-% 
+ 
 % anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
 % anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 
 anat_names = {'PC','AMY','OFC','VMPFC'};
 anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
-% anat_names = {'ar3-24','ar4-25','ar8-29','ar9-30','ar10-31','ar11-32','ar15-36','ar16-37'};
-% anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
+
 % anat_names = {'11m','14m','47m','47o','ar11','ar13','FPI','FPM'};
 % anat_masks = {'rwar_03_24.nii','rwar_04_25.nii','rwar_08_29.nii','rwar_09_30.nii','rwar_10_31.nii','rwar_11_32.nii','rwar_15_36.nii','rwar_16_37.nii'};
 % anat_names = {'Clust1','Clust2','Clust3','Clust4','Clust5','Clust6'};
@@ -32,9 +31,10 @@ rangenormer = false;
 pca_maker = false;
 discretizer = false;
 sesswise = false;
-switcher = 'Domainpart'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
+switcher = 'Basic'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
 popname = 'pos'; % 'pos' 'neg' or 'mut'
 savename = 'final_f_decoding/Domainpart-2';
+
 % sess_l = cat(3,nchoosek([1 2 3],2),nchoosek([2 3 4],2),nchoosek([2 3
 % 4],2),nchoosek([2 3 4],2)); % For sesswise
 % load('C:\Data\NEMO\swampsunset.mat');
@@ -647,7 +647,7 @@ if strcmp(switcher,'Domainpart')
     'Title','beta_va', ...
     'ErrType','sem', ...
     'StarColor',[0.8 0 0], 'StarFontSize',12, 'ErrMult',1.6);
-    ylim([-4 4])
+    % ylim([-4 4])
     print(gcf,'-vector','-dsvg',[fullfile(savepath,'feldspar'),'.svg']) % svg
 
 end
