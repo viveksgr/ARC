@@ -42,7 +42,8 @@ for pp = 1:nperm
     end
 
     % Compute overall performance
-    accumat(pp) = fastcorr(predictions, grp);
+    cor_ = corrcoef(predictions, grp);
+    accumat(pp) = cor_(2);
 end
 
 p_accu = mean(accumat);
