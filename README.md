@@ -1,4 +1,4 @@
-# SFP project scripts
+# ARC project scripts
 
 Exhaustive codebase to run the pleasantness related analyses on the NEMO dataset
 
@@ -42,17 +42,15 @@ NOTE: Demo is only for illustration purposes only.
 4. Currently, demo files are provided to recreate crucial behavioral results from representational similarity analyses.
 
 ## 4. Instructions for Use and Reproduction:
-To repeat the complete analyses using these scripts, acquire the complete raw [dataset](https://www.nature.com/articles/s41593-023-01414-4#data-availability) and perform suggested preprocessing.
-The following scripts should be executed in order after preprocessing:
-1. ARC_createsingletrials: PExtract voxelwise single trials responses using the GLM single package
-2. ARC_RSA_analyses: Perform representational similarity analysis for valence, salience, appetitive and aversive pleasantness. 
-3. ARC_decoding_analyses: Decoding analyses based on support vector machine to predict odor valence, salience, appetitive or aversive pleasantness.
+To repeat the complete analyses using these scripts, we have provided the single-trial files and other datasets in the supporting_files. 
+The following scripts should be executed to reproduce figures from the manuscript. For more information, please refer to [examples](examples/Examples.md)
+1. ARC_RSA_analyses: Perform representational similarity analysis for valence, salience. 
+2. ARC_decoding_analyses: Decoding analyses based on support vector machine to predict odor valence, salience, appetitive or aversive pleasantness as well as cross-decoding analyses.
 
-*Detailed documentation for all scripts are in progress*
-
-The full analysis may take approximately over 24-48 hours depending on your system specifications and GLM_single settings.
-
-If you encounter issues, contact sgr.vivek@gmail.com.
+These analyses are based on the raw [dataset](https://www.nature.com/articles/s41593-023-01414-4#data-availability) and perform suggested preprocessing.
+Please use ARC_createsingletrials to verify estimation of single trials responses using the GLM single package.
 
 ## 5. Additional Information:
 Terms of use: This content is licensed under MIT License.
+If you use these data or analysis scripts, please cite the associated manuscript and acknowledge this repository as the source of the dataset and analysis code.
+Please contact sgr.vivek@gmail.com for any questions.
