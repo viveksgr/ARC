@@ -47,7 +47,7 @@ The following scripts should be executed to reproduce figures from the manuscrip
 1. ARC_RSA_analyses: Perform representational similarity analysis for valence, salience. 
 2. ARC_decoding_analyses: Decoding analyses based on support vector machine to predict odor valence, salience, appetitive or aversive pleasantness as well as cross-decoding analyses.
 
-These analyses are based on the raw [dataset](https://www.nature.com/articles/s41593-023-01414-4#data-availability) and perform suggested preprocessing.
+These analyses are based on the raw [dataset](https://www.nature.com/articles/s41593-023-01414-4#data-availability).
 Please use ARC_createsingletrials to verify estimation of single trials responses using the GLM single package.
 
 ## 5. Additional Information:
