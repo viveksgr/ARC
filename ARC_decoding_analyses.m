@@ -1,29 +1,64 @@
-%% General Settings
+% ARC decoding analysis script
+%
+% Purpose:
+%   Runs ROI-based decoding analyses for the ARC project using subject-level
+%   behavioral ratings and previously estimated neural response patterns.
+%   Supports three analysis modes selected by `switcher`:
+%       'Basic'      : decoding of valence and salience
+%       'Domainpart' : separate decoding within positive and negative valence domains
+%       'Crossdec'   : cross-domain decoding between positive and negative valence
+%
+% Main inputs:
+%   - mainroot   : path to ARC repository / data root
+%   - switcher   : analysis type ('Basic', 'Domainpart', or 'Crossdec')
+%   - anat_names / anat_masks : ROI names and corresponding mask files
+%   - behav      : perceptual ratings file (NEMO_perceptual.mat)
+%   - subject-specific GLMsingle output files:
+%                  TYPED_FITHRF_GLMDENOISE_RR.mat
+%   - maskfile / fmaskfile : anatomical and optional functional masks
+%
+% Main outputs:
+%   - rsa_P1     : subject x ROI x analysis-dimension matrix of decoding accuracies (r)
+%   - rsa_P1t    : corresponding t-statistics / threshold-related values from decoding functions
+%   - dfs        : subject x ROI x analysis-dimension effective sample sizes / degrees of freedom
+%   - saved figures in `savepath` showing ROI-level decoding results
+%
+% Notes:
+%   - This script was used for published analyses and is preserved in its
+%     original structure for reproducibility.
+%   - Behavioral labels are derived from subject-specific odor ratings.
+%   - Neural data are loaded ROI-wise from precomputed model matrices.
+%   - Statistical plotting at the end depends on the selected `switcher` mode.
 
-% Check fmasker
-tic
-root = 'D:\Work\ARC\ARC'; %'D:\Work\ARC\Scripts\'; %
+% Decoding Analyses for ARC project
+% Instructions: Set directory path, mainroot to path of Github repository
+mainroot = 'D:\Work\ARC\Scripts\';
+
+% Switch <switcher> to Basic decoding of valence and salience;
+% Domainpartiotioned Val+ and Val-
+% Or Cross decoding analyses
+switcher = 'Basic'; % 'Basic'; 'Domainpart'; 'Crossdec';
+savename = 'examples/Basicdecoding';
+
+% For subROI analyses within OFC, contact VivekSagar2016@u.northwestern.edu
+%% General Settings
 maskfile =  'ARC3_anatgw.nii';
 fmaskfile = 'ARC3_fanatgw3_pos.nii';
 fmasker = false; % Don't use functional masking
 binz = 7;
 binzc = 4;
 if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 = (binz+1)/2 ; binzpart2 = binzpart1; end
- 
-% anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
-% anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 
 anat_names = {'PC','AMY','OFC','VMPFC'};
 anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 
 % anat_names = {'11m','14m','47m','47o','ar11','ar13','FPI','FPM'};
 % anat_masks = {'rwar_03_24.nii','rwar_04_25.nii','rwar_08_29.nii','rwar_09_30.nii','rwar_10_31.nii','rwar_11_32.nii','rwar_15_36.nii','rwar_16_37.nii'};
-% anat_names = {'Clust1','Clust2','Clust3','Clust4','Clust5','Clust6'};
-% anat_masks = {'rwk_clus1.nii','rwk_clus2.nii','rwk_clus3.nii','rwk_clus4.nii','rwk_clus5.nii','rwk_clus6.nii'};
+% anat_names = {'Insula','Hipp','DLPFC','A1','wm'};
+% anat_masks = {'rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 
 ar_exOFC = false;
 nanat = length(anat_names);
-incneut = false;
 medianize_behav = true;
 shuffler = false;
 rangenormer = false;
@@ -31,9 +66,6 @@ rangenormer = false;
 pca_maker = false;
 discretizer = false;
 sesswise = false;
-switcher = 'Domainpart'; % 'Basic'; 'Domainpart'; 'Neuralpart_mutual'; 'Crossdec';'CrossdecNeural'
-savename = 'final_f_decoding/Basic_rep';
-
 single_n = false; % Noisepool
 single_c = false; % Cutoff from sign voxels
 z_scorer = false;
@@ -42,16 +74,12 @@ nodor = 160;
 sz_ctrl = false;
 intens_reg = false;
 wt_adj = false;
-
 sess_l = repmat([0],1,2,3);
 
-
-dirs = {fullfile(root,'\ARC01\mediation');
-    fullfile(root,'\ARC02\mediation');
-    fullfile(root,'\ARC03\mediation')};
-behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
+behav = load(fullfile(mainroot,'supporting_files','NEMO_perceptual.mat'));
+% behav = load(fullfile(root,'ARC','NEMO_perceptual2.mat'));
 modelname = fullfile('Decoding',switcher);
-savepath = fullfile(root,savename);
+savepath = fullfile(mainroot,savename);
 v_id = 2; % Index of vector for median splitting odors
 
 % load(fullfile(statpath,'fir_cv.mat'))
@@ -65,20 +93,12 @@ hold on
 % Subject - index
 kk = 1;
 
-if fmasker
-    % ffile ='C:\Work\ARC\ARC\RSA\controls\main\ARC_RSA.mat';
-    % ffile = 'C:\Work\ARC\ARC\RSA\Basic\ARC_RSA.mat';
-    ffile = 'D:\Work\ARC\ARC\RSA\valsep_corrected2\ARC_RSA.mat';
-else
-    % ffile = 'C:\Work\ARC\ARC\RSA\unmasked\valsep\ARC_RSA.mat';
-    % ffile = 'C:\Work\ARC\ARC\RSA\unmasked\basic_med\ARC_RSA.mat';
-    ffile = 'D:\Work\ARC\ARC\results\basic_main_100\ARC_RSA.mat';
-end
-
-
 for s = [1 2 3] % Subject
     fprintf('Subject: %02d\n',s)
-    anatdir = fullfile(root,sprintf('ARC%02d',s),'single');
+    anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s),'single');
+    statpath = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s));
+
+    % anatdir = fullfile(root,sprintf('ARC%02d',s),'single');
     % Construction of median split
     behav_ratings = behav.behav(s).ratings(:,v_id);
     behav_int = behav.behav(s).ratings(:,1);
@@ -94,7 +114,6 @@ for s = [1 2 3] % Subject
     % behav_ratings = zscore(behav_ratings);
     md = 0;
 
-    statpath = dirs{s};
     % Gray Matter, Functional and Anatomical Masks
     mask = (spm_read_vols(spm_vol(fullfile(statpath, maskfile)))); % Mask used to construct odor files
     mask(isnan(mask))=0;
@@ -106,18 +125,13 @@ for s = [1 2 3] % Subject
     end
     fmask = logical(fmask); % Only choose voxels with significant odor evoked activity
     fmask_1d = fmask(mask);
-    if s <3
-        anatpath = fullfile(root,sprintf('NEMO_%02d',s),'\imaging\nii\masks');
-    else
-        anatpath = fullfile(root,sprintf('NEMO_%02d',s+1),'\imaging\nii\masks');
-    end
 
     % Model names
     masks_set = [];
     masks_set_cell = {};
     m_3d = {};
     for ii = 1:length(anat_masks)
-        m1 = spm_read_vols(spm_vol(fullfile(anatdir,anat_masks{ii})));
+        m1 = spm_read_vols(spm_vol(fullfile(statpath,anat_masks{ii})));
         m1(isnan(m1))=0;
         m1(m1<=0.01)=0;
         m1(m1>0) = 1;
@@ -132,11 +146,10 @@ for s = [1 2 3] % Subject
     linux_config = false;
     warning('off','all')
 
-    %% Representational connectivity
+    %% Decoding analyses
     S_mat = zeros(length(anat_names),2);
     S_mat2 = zeros(length(anat_names),2);  
-    if s==3; s2 = 4; else; s2 = s; end   
-    onsets = load(fullfile(anatdir,sprintf('conditions_NEMO%02d.mat',s2)),'onsets');
+    onsets = load(fullfile(statpath,sprintf('conditions_NEMO%02d.mat',s)),'onsets');
     onsets = onsets.onsets;
     group_vec = cell(nodor,1);
     unity = [];
@@ -173,7 +186,7 @@ for s = [1 2 3] % Subject
             sum_vox(ii) = sum(keep);
         else
         % modelmd_ = load(fullfile(anatdir,'sesswise',anat_names{ii},'TR_01','TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
-         modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+        modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
       
         modelmd = squeeze(modelmd_.modelmd);
         noisepool = modelmd_.noisepool;
@@ -333,7 +346,7 @@ for s = [1 2 3] % Subject
             case 'Crossdec'
                 if discretizer; bcn = binzc; else; bcn = 0; end
 
-                if incneut
+               
                     labneg = selectLess4AndHalf4(labels_val,bcn);
                     neural_val_pos = neural_val(~labneg ,:);
                     neural_val_neg = neural_val(labneg ,:);
@@ -341,14 +354,7 @@ for s = [1 2 3] % Subject
                     labels_val_pos = labels_val(~labneg ,:);
                     labels_val_neg = labels_val(labneg ,:);
 
-                else
-                    neural_val_pos = neural_val(labels_val>binzc,:);
-                    neural_val_neg = neural_val(labels_val<binzc,:);
-
-                    labels_val_pos = labels_val(labels_val>binzc,:);
-                    labels_val_neg = labels_val(labels_val<binzc,:);
-                end
-
+              
 
                 [ rsa_P1(s,ii,1),~,rsa_P1t(s,ii,1)] = ARC_regress_wrapper(neural_val_pos,labels_val_pos, neural_val_neg, labels_val_neg, 10,1,false);
                 [ rsa_P1(s,ii,2),~,rsa_P1t(s,ii,2)] = ARC_regress_wrapper(neural_val_neg, labels_val_neg,neural_val_pos,labels_val_pos, 10,1,false);
@@ -365,55 +371,56 @@ for s = [1 2 3] % Subject
     end
 end
 
-
+%% Plot figures
 mkdir(savepath)
-% savepath = pwd;
-rsa_copy = rsa_P1;
-p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs);
-% rsa_P1(vpop<10) = nan;
-ARC_barplot_sig(rsa_P1,p_values_3dt,true,false)
-xticks(1:nanat)
-xticklabels(anat_names);
-% ylim([-0.1 0.4])
-ylabel('Prediction (r)')
-% legend({'Val+ -> Val-','Val- -> Val+'})
-legend(legender,'Location','southwest')
-% ylim([-0.1 0.4])
-savefig(fullfile(savepath,'ARC_decoding'))
-print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_decoding_diff'),'.svg']) % svg
-print([fullfile(savepath,'ARC_decoding_diff')],'-dpng') % svg
-% print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_decoding'),'.svg']) % svg
-% p_values_3d2 = ARC_combinePValues3D(rsa_P1t, rsa_P1, dfs)
-% p_values_3dz = ARC_decoding_pvals_zsc(rsa_P1, dfs)
-% savepath = pwd;-
-save(fullfile(savepath,'ARC_decoding'))
-toc
 
-if strcmp(switcher,'Crossdec')
-    beta_mat  = tanh(mean(atanh(rsa_P1),3));
-    % p_vals = max(p_values_3dt ,[],2);
-    p_values_3dt = ARC_decoding_pvals(  beta_mat, mean(dfs,3));
-    plot_roi_bars_with_subjects(beta_mat, p_vals, ...
-    'RoiLabels',anat_names, ...
-    'YLabel','Accuracy (r)', ...
-    'Title','Cross Decoding', ...
-    'ErrType','sem', ...
-    'StarColor',[0.8 0 0], 'StarFontSize',12, 'ErrMult',1.6);
-end
+switch switcher
+    case 'Basic'
+        rsa_copy = rsa_P1;
+        p_values_3dt = ARC_decoding_pvals(rsa_P1, dfs);
+        % rsa_P1(vpop<10) = nan;
+        ARC_barplot_sig(rsa_P1,p_values_3dt,true,false)
+        xticks(1:nanat)
+        xticklabels(anat_names);
+        % ylim([-0.1 0.4])
+        ylabel('Prediction (r)')
+        % legend({'Val+ -> Val-','Val- -> Val+'})
+        legend(legender,'Location','southwest')
+        % ylim([-0.1 0.4])
+        % savefig(fullfile(savepath,'ARC_decoding'))
+        % print(gcf,'-vector','-dsvg',[fullfile(savepath,'ARC_decoding_diff'),'.svg']) % svg
+        print([fullfile(savepath,'mainres')],'-dpng') % svg
 
-% Single r plot
-if strcmp(switcher,'Domainpart')
-    % [beta_mat, p_vals] = ARC_diff2conds_dfweighted(rsa_P1, dfs);
-    [beta_mat, p_vals] = ARC_diff2conds_lessConservative(rsa_P1, dfs, ...
-                              'Rho',0.3, 'Method','fixed');
-    plot_roi_bars_with_subjects(beta_mat, p_vals, ...
-    'RoiLabels',anat_names, ...
-    'YLabel','Accuracy (r)', ...
-    'Title','beta_va', ...
-    'ErrType','sem', ...
-    'StarColor',[0.8 0 0], 'StarFontSize',12, 'ErrMult',1.6);
-    % ylim([-4 4])
-    print(gcf,'-vector','-dsvg',[fullfile(savepath,'feldspar'),'.svg']) % svg
+
+    case 'Crossdec'
+        beta_mat  = tanh(mean(atanh(rsa_P1),3));
+        % p_vals = max(p_values_3dt ,[],2);
+        p_values_3dt = ARC_decoding_pvals(  beta_mat, mean(dfs,3));
+        plot_roi_bars_with_subjects(beta_mat, p_values_3dt, ...
+            'RoiLabels',anat_names, ...
+            'YLabel','Accuracy (r)', ...
+            'Title','Cross Decoding', ...
+            'ErrType','sem', ...
+            'StarColor',[0.8 0 0], 'StarFontSize',12, 'ErrMult',1.6);
+        % print(gcf,'-vector','-dpng',[fullfile(savepath,'feldspar'),'.svg']) % svg
+        print(fullfile(savepath,'mainres'),'-dpng')
+
+
+        % Single r plot
+    case 'Domainpart'
+
+        % [beta_mat, p_vals] = ARC_diff2conds_dfweighted(rsa_P1, dfs);
+        [beta_mat, p_vals] = ARC_diff2conds_lessConservative(rsa_P1, dfs, ...
+            'Rho',0.3, 'Method','fixed');
+        plot_roi_bars_with_subjects(beta_mat, p_vals, ...
+            'RoiLabels',anat_names, ...
+            'YLabel','Accuracy (r)', ...
+            'Title','beta_va', ...
+            'ErrType','sem', ...
+            'StarColor',[0.8 0 0], 'StarFontSize',12, 'ErrMult',1.6);
+        % ylim([-4 4])
+        % print(gcf,'-vector','-dpng',[fullfile(savepath,'Crossdec'),'.svg']) % svg
+        print(fullfile(savepath,'mainres'),'-dpng')
 
 end
 

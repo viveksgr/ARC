@@ -70,7 +70,7 @@ if mod(binz,2)==0; binzpart1 = binz/2; binzpart2 = binzpart1+1; else; binzpart1 
 % anat_names = {'PC','AMY','OFC','VMPFC','Insula','Hipp','DLPFC','A1','wm'};
 % anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii','rwinsula.nii','rwHipp.nii','rwDLPFC.nii','rwAud.nii','rwm_main.nii'};
 
-anat_names = {'PirC','AMY','OFC','VMPFC'};
+anat_names = {'PC','AMY','OFC','VMPFC'};
 anat_masks = {'rwPC.nii','rwAmygdala.nii','rwofc.nii','rwvmpfc.nii'};
 
 % anat_names = {'Insula','Hipp','A1','wm'};
@@ -120,7 +120,8 @@ for s = [1 2 3] % Subject
         continue
     else
 
-        anatdir = fullfile(mainroot,sprintf('ARC%02d',s),'single');
+        roidir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s),'single');
+        anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s));
         if demomode;  nshuff =50; anatdir = fullfile(mainroot,'supporting_files',sprintf('ARC%02d',s));...
             load(fullfile(mainroot,'supporting_files','modelbinned_mat_shuff.mat'));...    
             load(fullfile(mainroot,'supporting_files','modelbinned_mat.mat')); 
@@ -210,7 +211,7 @@ for s = [1 2 3] % Subject
             fprintf('area:%02d\n',ii)
 
             if ~demomode % Extract raw single trial responses (not functional in the demo version)
-                modelmd_ = load(fullfile(anatdir,'sesswise',anat_names{ii},'TR_01','TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
+                modelmd_ = load(fullfile(roidir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
                 % modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPED_FITHRF_GLMDENOISE_RR.mat'),'modelmd','noisepool');
               % modelmd_ = load(fullfile(anatdir,anat_names{ii},'TYPEB_FITHRF.mat'),'modelmd','noisepool');
 
@@ -565,7 +566,7 @@ print(fullfile(savepath,'ARC_RSAwt'),'-dpng')
 if demomode; fprintf('Ran demo with 50 permutations: p values are not precise\n'); end
 % save(fullfile(savepath,'ARC_wts'),'w_score_mat')
 % SFP_clearLargeVariables
-save(fullfile(savepath,'ARC_RSA'))
+% save(fullfile(savepath,'ARC_RSA'))
 
 
 %% Fig debug

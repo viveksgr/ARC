@@ -23,7 +23,8 @@ else
     mdl = svmtrain(trainY, trainX_nn, opt);
 end
 predictions = svmpredict( testY, testX_nn,  mdl, ' -q ');
-accumat(pp)= fastcorr(predictions,testY);
+corsc = corrcoef(predictions,testY);
+accumat(pp)= corsc(2);
 end
 p_accu = nanmean(accumat);
 [~,p_accut] = ARC_r2t(p_accu,length(testY));
